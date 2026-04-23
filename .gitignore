@@ -61,11 +61,12 @@ ENV/
 # 再生成された新しい samples は git 管理外にしたい場合はここに追記
 # 03_attendance-check/samples/
 
-# Claude Code 個人状態
-.claude/state/
-.claude/sessions/
-.claude/logs/
-.claude/debug/
+# Claude Code 個人状態（サブプロジェクト含めて全ての階層で除外）
+**/.claude/state/
+**/.claude/sessions/
+**/.claude/logs/
+**/.claude/debug/
+**/.claude/skills/
 
 # ログ
 *.log
