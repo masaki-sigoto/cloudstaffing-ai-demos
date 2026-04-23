@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AI × CS 活用デモ 統合ダッシュボード</title>
+<style>
+:root {
+  --primary: #0066CC;
+  --primary-dark: #004999;
+  --accent: #FF7A45;
+  --success: #2DA358;
+  --danger: #D93025;
+  --bg: #F5F7FA;
+  --card: #FFFFFF;
+  --text: #1F2933;
+  --muted: #616E7C;
+  --border: #DEE3E8;
+}
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.6;
+}
+/* ================= Top nav ================= */
+.topnav {
+  position: sticky; top: 0; z-index: 50;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 24px;
+  height: 56px;
+  gap: 8px;
+}
+.topnav .brand {
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  margin-right: 24px;
+  font-size: 15px;
+}
+.topnav .brand::before {
+  content: "▲";
+  color: var(--primary);
+  margin-right: 8px;
+}
+.topnav .tab {
+  color: var(--muted);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.topnav .tab:hover { background: var(--bg); color: var(--text); }
+.topnav .tab.active {
+  color: var(--primary);
+  background: rgba(0,102,204,0.08);
+}
+.topnav .spacer { flex: 1; }
+.topnav .meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ================= Hero ================= */
+.hero {
+  background: linear-gradient(135deg, #0066CC 0%, #004999 100%);
+  color: #fff;
+  padding: 56px 32px 72px;
+  text-align: center;
+}
+.hero h1 {
+  font-size: 36px;
+  margin: 0 0 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hero .subtitle {
+  font-size: 17px;
+  opacity: 0.9;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.hero .tags {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.hero .tag {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+/* ================= Container ================= */
+.container {
+  max-width: 1180px;
+  margin: -36px auto 48px;
+  padding: 0 24px;
+}
+
+/* ================= Card grid ================= */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-bottom: 48px;
+}
+.demo-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: var(--text);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.demo-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,102,204,0.12);
+  border-color: var(--primary);
+}
+.demo-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--primary);
+}
+.demo-card.demo-02::before { background: var(--accent); }
+.demo-card.demo-03::before { background: var(--success); }
+.demo-card.demo-04::before { background: #9333EA; }
+
+.demo-number {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.demo-02 .demo-number { color: var(--accent); }
+.demo-03 .demo-number { color: var(--success); }
+.demo-04 .demo-number { color: #9333EA; }
+
+.demo-card h3 {
+  margin: 0 0 10px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.demo-card p {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 14px;
+  flex-grow: 1;
+}
+.demo-card .keypoint {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.demo-card .open-btn {
+  align-self: flex-start;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: #fff;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.15s;
+}
+.demo-02 .open-btn { background: var(--accent); }
+.demo-03 .open-btn { background: var(--success); }
+.demo-04 .open-btn { background: #9333EA; }
+.demo-card:hover .open-btn { filter: brightness(0.93); }
+
+/* ================= Section header ================= */
+.section-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 48px 0 24px;
+}
+
+/* ================= Process box ================= */
+.process {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 32px;
+}
+.process h2 {
+  margin: 0 0 16px;
+  font-size: 22px;
+}
+.process ul { margin: 0 0 16px 20px; padding: 0; color: var(--muted); }
+.process ul li { margin-bottom: 6px; font-size: 14px; }
+.process .highlight {
+  background: rgba(0,102,204,0.08);
+  border-left: 4px solid var(--primary);
+  padding: 14px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text);
+  margin-top: 18px;
+}
+
+/* ================= Footer ================= */
+footer {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 32px 24px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 13px;
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+footer a {
+  color: var(--primary);
+  text-decoration: none;
+}
+footer a:hover { text-decoration: underline; }
+
+/* ================= Responsive ================= */
+@media (max-width: 720px) {
+  .hero h1 { font-size: 26px; }
+  .hero .subtitle { font-size: 15px; }
+  .topnav { padding: 0 16px; }
+  .topnav .tab { padding: 6px 10px; font-size: 13px; }
+}
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/" class="brand">AI × CS 活用デモ</a>
+  <a href="/dashboard/01.html" class="tab">01 CSV加工</a>
+  <a href="/dashboard/02.html" class="tab">02 端数処理</a>
+  <a href="/dashboard/03.html" class="tab">03 勤怠チェック</a>
+  <a href="/04_yesno-diagnosis/src/index.html" class="tab">04 運用整備診断</a>
+  <span class="spacer"></span>
+  <span class="meta">localhost:8765</span>
+</nav>
+
+<section class="hero">
+  <h1>AI × CS 活用デモ 統合ダッシュボード</h1>
+  <p class="subtitle">クラウドスタッフィング（人材派遣管理SaaS）向けのAI活用モック。<br>4つのデモを同じ画面から順に体験できます。</p>
+  <div class="tags">
+    <span class="tag">Python 3.10+</span>
+    <span class="tag">依存最小</span>
+    <span class="tag">ローカル完結</span>
+    <span class="tag">オフライン動作</span>
+  </div>
+</section>
+
+<main class="container">
+  <h2 class="section-title">4つのデモ</h2>
+  <div class="cards">
+
+    <a class="demo-card demo-01" href="/dashboard/01.html">
+      <div class="demo-number">DEMO 01</div>
+      <h3>CSV加工の完全自動化</h3>
+      <p>派遣元から届く崩れた勤怠CSV（列順・日付形式・文字コードがバラバラ）を1コマンドで標準フォーマットへ自動整形。</p>
+      <div class="keypoint">💡 Excel手作業を削減・差戻し防止</div>
+      <span class="open-btn">デモを開く →</span>
+    </a>
+
+    <a class="demo-card demo-02" href="/dashboard/02.html">
+      <div class="demo-number">DEMO 02</div>
+      <h3>端数処理チェッカー</h3>
+      <p>勤怠の丸めルール（15分切上げ/切捨て/1分単位など）の違いで請求・給与がどう変わるかを可視化。</p>
+      <div class="keypoint">💰 月20日換算で18,000円差を体感</div>
+      <span class="open-btn">デモを開く →</span>
+    </a>
+
+    <a class="demo-card demo-03" href="/dashboard/03.html">
+      <div class="demo-number">DEMO 03</div>
+      <h3>勤怠チェック自動化</h3>
+      <p>スタッフ・派遣先承認者・派遣元担当者の3者ワークフローを突合し、月次締め前に"要確認の20件"だけに絞り込み。</p>
+      <div class="keypoint">🎯 266件 → 20件の絞り込み</div>
+      <span class="open-btn">デモを開く →</span>
+    </a>
+
+    <a class="demo-card demo-04" href="/04_yesno-diagnosis/src/index.html">
+      <div class="demo-number">DEMO 04 ★</div>
+      <h3>運用整備状況 簡易診断</h3>
+      <p>派遣管理運用の整備状況を YES/NO 質問で診断し、5つのパターンのうち最適な運用案を提示。営業・導入支援に。</p>
+      <div class="keypoint">⚡ 5分で運用整備パターン判定</div>
+      <span class="open-btn">診断を開く →</span>
+    </a>
+
+  </div>
+
+  <div class="process">
+    <h2>このモック4本、実は全部 AIエージェントが作りました</h2>
+    <ul>
+      <li>要件定義 → システム設計 → 技術仕様 → 実装の 4 フェーズ</li>
+      <li>各フェーズで Codex CLI との 3 往復レビュー（合計 36 往復）</li>
+      <li>4 プロジェクト並列でサブエージェント 40+ 回起動</li>
+      <li>人間の指示は 10 回未満、所要時間は数時間</li>
+    </ul>
+    <div class="highlight">
+      <strong>ちなみにこのダッシュボードも、Claude Code が作りました。</strong>
+      詳しくは <a href="/PROCESS.md">PROCESS.md</a> / <a href="/SEMINAR_GUIDE.md">SEMINAR_GUIDE.md</a> を参照。
+    </div>
+  </div>
+</main>
+
+<footer>
+  <a href="/README.md">README</a>
+  <a href="/LAUNCH.md">起動方法</a>
+  <a href="/SEMINAR_GUIDE.md">セミナー実演ガイド</a>
+  <a href="/PROCESS.md">制作プロセス</a>
+  <span style="margin-left:auto;">© AI × CS 活用デモ — セミナー実演用モック</span>
+</footer>
+
+</body>
+</html>

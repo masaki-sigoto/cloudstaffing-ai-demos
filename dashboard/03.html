@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 勤怠チェック自動化 — AI × CS 活用デモ</title>
+<style>
+  :root {
+    --primary: #0066CC;
+    --primary-dark: #004a99;
+    --bad: #D93025;
+    --med: #E8A317;
+    --low: #4A5568;
+    --success: #2DA358;
+    --bg: #F5F7FA;
+    --card: #FFFFFF;
+    --border: #E2E8F0;
+    --text: #1A202C;
+    --text-mute: #4A5568;
+    --text-faint: #718096;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, "Hiragino Sans", "Yu Gothic", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  button { font-family: inherit; cursor: pointer; }
+
+  /* ===== Top nav ===== */
+  .topnav {
+    display: flex; align-items: center; gap: 4px;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 52px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topnav .brand {
+    font-weight: 700; font-size: 15px;
+    margin-right: 24px; color: var(--text);
+  }
+  .topnav .tab {
+    padding: 8px 14px;
+    border-radius: 6px;
+    color: var(--text-mute);
+    font-size: 13px;
+  }
+  .topnav .tab:hover { background: #f1f5f9; text-decoration: none; }
+  .topnav .tab.active { background: var(--primary); color: #fff; }
+
+  /* ===== Hero ===== */
+  .hero {
+    background: linear-gradient(135deg, #0066CC 0%, #1e88e5 100%);
+    color: #fff;
+    padding: 36px 32px 32px;
+  }
+  .hero .wrap { max-width: 1200px; margin: 0 auto; }
+  .hero h1 { margin: 0 0 6px; font-size: 26px; font-weight: 700; letter-spacing: 0.02em; }
+  .hero p { margin: 0; font-size: 15px; opacity: 0.95; }
+  .hero .subline { margin-top: 8px; font-size: 13px; opacity: 0.85; }
+
+  /* ===== Main container ===== */
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px 64px; }
+
+  /* ===== Cards ===== */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+  }
+  .card h2 {
+    margin: 0 0 14px; font-size: 16px; font-weight: 700; color: var(--text);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; display: inline-block; }
+
+  /* ===== Control panel ===== */
+  .ctrl-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 2fr;
+    gap: 20px;
+    align-items: end;
+  }
+  @media (max-width: 900px) {
+    .ctrl-row { grid-template-columns: 1fr; }
+  }
+  .field label {
+    display: block; font-size: 12px; color: var(--text-mute);
+    margin-bottom: 4px; font-weight: 600;
+  }
+  .field input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+  }
+  .field input:focus {
+    outline: none; border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.15);
+  }
+  .btn-group { display: flex; gap: 10px; align-items: end; }
+  .btn {
+    border: 0; border-radius: 8px;
+    padding: 12px 18px; font-size: 14px; font-weight: 600;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--primary); color: #fff;
+    padding: 14px 24px; font-size: 15px;
+    box-shadow: 0 2px 6px rgba(0, 102, 204, 0.25);
+  }
+  .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+  .btn-primary:disabled { background: #90b4d6; cursor: not-allowed; transform: none; }
+  .btn-sub {
+    background: #fff; color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-sub:hover { background: #f1f5f9; }
+
+  /* ===== Workflow diagram ===== */
+  .workflow {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--text-mute);
+    flex-wrap: wrap;
+  }
+  .workflow .step {
+    padding: 6px 10px; background: #f1f5f9;
+    border-radius: 5px; border: 1px solid var(--border);
+  }
+  .workflow .arrow { color: var(--text-faint); }
+
+  /* ===== Summary hero cards ===== */
+  .summary-hero {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 24px;
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 700px) {
+    .summary-hero { grid-template-columns: 1fr; }
+    .summary-hero .arrow-big { transform: rotate(90deg); }
+  }
+  .summary-hero .block { text-align: center; }
+  .summary-hero .label {
+    font-size: 13px; color: var(--text-mute); font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .summary-hero .big-num {
+    font-size: 72px; font-weight: 800; line-height: 1;
+    font-feature-settings: 'tnum' on;
+    letter-spacing: -0.03em;
+    color: var(--text);
+  }
+  .summary-hero .big-num.flagged { color: var(--bad); }
+  .summary-hero .unit { font-size: 20px; font-weight: 600; color: var(--text-mute); margin-left: 4px; }
+  .summary-hero .arrow-big {
+    font-size: 40px; color: var(--primary);
+    font-weight: 700;
+  }
+  .summary-hero .sev-bar {
+    display: flex; gap: 6px; justify-content: center;
+    margin-top: 10px;
+  }
+  .badge-sev {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 14px;
+    font-size: 12px; font-weight: 700;
+    color: #fff;
+  }
+  .badge-sev.high { background: var(--bad); }
+  .badge-sev.medium { background: var(--med); }
+  .badge-sev.low { background: var(--low); }
+
+  /* ===== Tabs ===== */
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 18px;
+    gap: 2px;
+    flex-wrap: wrap;
+  }
+  .tabs .tab-btn {
+    padding: 10px 16px;
+    background: transparent;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    font-size: 14px; font-weight: 600;
+    color: var(--text-mute);
+  }
+  .tabs .tab-btn:hover { color: var(--text); }
+  .tabs .tab-btn.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ===== Findings table ===== */
+  .toolbar {
+    display: flex; gap: 14px; align-items: center;
+    margin-bottom: 12px; flex-wrap: wrap;
+  }
+  .toolbar .chip {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    font-size: 12px; font-weight: 600;
+    color: var(--text-mute);
+    cursor: pointer;
+    user-select: none;
+  }
+  .toolbar .chip.active {
+    background: var(--primary); color: #fff;
+    border-color: var(--primary);
+  }
+  .toolbar .chip.sev-high.active { background: var(--bad); border-color: var(--bad); }
+  .toolbar .chip.sev-medium.active { background: var(--med); border-color: var(--med); }
+  .toolbar .chip.sev-low.active { background: var(--low); border-color: var(--low); }
+  .toolbar .sep { width: 1px; height: 18px; background: var(--border); }
+  .toolbar .count-info { font-size: 12px; color: var(--text-faint); margin-left: auto; }
+
+  table.findings {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.findings th {
+    text-align: left;
+    background: #f8fafc;
+    padding: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-mute);
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+  table.findings td {
+    padding: 10px;
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: top;
+  }
+  table.findings tbody tr { transition: background 0.1s; }
+  table.findings tbody tr:hover { background: #f8fafc; }
+  table.findings tr.row-high td:first-child { border-left: 3px solid var(--bad); }
+  table.findings tr.row-medium td:first-child { border-left: 3px solid var(--med); }
+  table.findings tr.row-low td:first-child { border-left: 3px solid var(--low); }
+  table.findings .pat-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #f1f5f9;
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  table.findings .staff-name { font-weight: 600; }
+  table.findings .staff-id { font-size: 11px; color: var(--text-faint); margin-left: 4px; }
+  table.findings .action { color: var(--text-mute); font-size: 12px; }
+
+  /* ===== Pattern legend ===== */
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .legend .pat {
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.1s;
+  }
+  .legend .pat:hover { background: #e2e8f0; }
+  .legend .pat.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .legend .pat code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700; font-size: 11px;
+    margin-right: 4px;
+    opacity: 0.8;
+  }
+
+  /* ===== Notifications / Checklists cards ===== */
+  .doc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 16px;
+  }
+  .doc-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .doc-card .head {
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px;
+  }
+  .doc-card .head .name {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 700; color: var(--text);
+  }
+  .doc-card .head .tag {
+    font-size: 11px; color: var(--text-faint);
+  }
+  .doc-card pre {
+    margin: 0;
+    padding: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 420px;
+    overflow-y: auto;
+    color: var(--text);
+  }
+
+  /* ===== JSON block ===== */
+  pre.json-block {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 16px;
+    border-radius: 8px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12px;
+    overflow-x: auto;
+    max-height: 560px;
+    overflow-y: auto;
+    white-space: pre;
+  }
+
+  /* ===== Status pane ===== */
+  .status-pane {
+    display: none;
+    align-items: center; gap: 12px;
+    padding: 14px 18px;
+    background: #eef5ff;
+    border: 1px solid #c9ddf5;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    color: var(--primary-dark);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .status-pane.show { display: flex; }
+  .status-pane.err {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: var(--bad);
+  }
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid #c9ddf5;
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== Placeholder ===== */
+  .placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-faint);
+    font-size: 14px;
+  }
+  .placeholder .ico { font-size: 40px; margin-bottom: 10px; opacity: 0.5; }
+
+  /* ===== Footer ===== */
+  footer {
+    max-width: 1200px; margin: 40px auto 0;
+    padding: 20px 32px;
+    font-size: 12px; color: var(--text-faint);
+    border-top: 1px solid var(--border);
+  }
+  footer ul { margin: 8px 0 0; padding-left: 18px; }
+  footer li { margin-bottom: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/" class="brand">AI × CS 活用デモ</a>
+  <a href="/dashboard/01.html" class="tab">01 CSV加工</a>
+  <a href="/dashboard/02.html" class="tab">02 端数処理</a>
+  <a href="/dashboard/03.html" class="tab active">03 勤怠チェック</a>
+  <a href="/04_yesno-diagnosis/src/index.html" class="tab">04 運用整備診断</a>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>03 勤怠チェック自動化</h1>
+    <p>月次締め前の "確認地獄" からの解放</p>
+    <div class="subline">スタッフ打刻 × 派遣先承認 × 派遣元コーディネーター集計 — 10 パターンの異常を AI で自動検出</div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ================= 操作パネル ================= -->
+  <section class="card">
+    <h2><span class="dot"></span>操作パネル</h2>
+    <div class="ctrl-row">
+      <div class="field">
+        <label for="month">対象月</label>
+        <input id="month" type="text" value="2026-04" placeholder="YYYY-MM">
+      </div>
+      <div class="field">
+        <label for="asof">基準日（月次締め2営業日前）</label>
+        <input id="asof" type="text" value="2026-04-28" placeholder="YYYY-MM-DD">
+      </div>
+      <div class="btn-group">
+        <button id="btn-run" class="btn btn-primary">勤怠チェック実行</button>
+        <button id="btn-gen" class="btn btn-sub">サンプル再生成</button>
+      </div>
+    </div>
+    <div class="workflow">
+      <span class="step">① スタッフ打刻</span>
+      <span class="arrow">→</span>
+      <span class="step">② 派遣先承認</span>
+      <span class="arrow">→</span>
+      <span class="step">③ 派遣元コーディネーター集計</span>
+      <span class="arrow">→</span>
+      <span class="step">④ 月次締め</span>
+    </div>
+  </section>
+
+  <!-- ================= ステータス ================= -->
+  <div id="status" class="status-pane">
+    <div class="spinner" id="spin"></div>
+    <div id="status-text">実行中…</div>
+  </div>
+
+  <!-- ================= サマリヒーロー ================= -->
+  <section id="summary-section" style="display:none;">
+    <div class="summary-hero">
+      <div class="block">
+        <div class="label">対象レコード</div>
+        <div class="big-num" id="num-total">0</div>
+        <div style="font-size:12px;color:var(--text-mute);margin-top:4px;">月内の全勤怠レコード</div>
+      </div>
+      <div class="arrow-big">→</div>
+      <div class="block">
+        <div class="label">AI が拾った 要確認</div>
+        <div class="big-num flagged" id="num-flagged">0<span class="unit">件</span></div>
+        <div class="sev-bar">
+          <span class="badge-sev high">高 <span id="sev-high">0</span></span>
+          <span class="badge-sev medium">中 <span id="sev-med">0</span></span>
+          <span class="badge-sev low">低 <span id="sev-low">0</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= パターン凡例 ================= -->
+    <div class="card">
+      <h2><span class="dot"></span>10 異常パターン（クリックで絞り込み）</h2>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <!-- ================= タブ ================= -->
+    <div class="card">
+      <div class="tabs" id="tabs">
+        <button class="tab-btn active" data-tab="findings">異常検知一覧 <span id="cnt-findings"></span></button>
+        <button class="tab-btn" data-tab="notif">担当者別通知 <span id="cnt-notif"></span></button>
+        <button class="tab-btn" data-tab="chk">事業所別チェックリスト <span id="cnt-chk"></span></button>
+        <button class="tab-btn" data-tab="json">実行サマリ (JSON)</button>
+      </div>
+
+      <!-- findings -->
+      <div class="tab-panel active" id="panel-findings">
+        <div class="toolbar">
+          <span class="chip active" data-sev="all">すべて</span>
+          <span class="chip sev-high" data-sev="high">高のみ</span>
+          <span class="chip sev-medium" data-sev="medium">中のみ</span>
+          <span class="chip sev-low" data-sev="low">低のみ</span>
+          <span class="sep"></span>
+          <span class="chip" id="chip-clear-pat" style="display:none;">パターンフィルタ解除</span>
+          <span class="count-info" id="visible-count"></span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="findings">
+            <thead>
+              <tr>
+                <th>重要度</th>
+                <th>日付</th>
+                <th>スタッフ</th>
+                <th>派遣先・事業所</th>
+                <th>パターン</th>
+                <th>推奨アクション</th>
+                <th>担当</th>
+              </tr>
+            </thead>
+            <tbody id="findings-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- notifications -->
+      <div class="tab-panel" id="panel-notif">
+        <div style="font-size:13px;color:var(--text-mute);margin-bottom:12px;">
+          派遣元コーディネーター各自に送られる通知メール文面（<code>out/notifications/</code>）。<br>
+          月次締め前、担当スタッフに関する要対応レコードのみをまとめて通知します。
+        </div>
+        <div class="doc-grid" id="notif-grid"></div>
+      </div>
+
+      <!-- checklists -->
+      <div class="tab-panel" id="panel-chk">
+        <div style="font-size:13px;color:var(--text-mute);margin-bottom:12px;">
+          派遣先事業所・担当コーディネーター別のチェックリスト（<code>out/checklist/</code>）。<br>
+          派遣先承認者への再承認依頼資料としても使えます。
+        </div>
+        <div class="doc-grid" id="chk-grid"></div>
+      </div>
+
+      <!-- JSON -->
+      <div class="tab-panel" id="panel-json">
+        <div style="font-size:13px;color:var(--text-mute);margin-bottom:10px;">
+          <code>out/run_summary_YYYYMM.json</code> の中身。ダッシュボードや他システムへ連携する際のペイロードです。
+        </div>
+        <pre class="json-block" id="json-out"></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 初期プレースホルダ ================= -->
+  <div id="placeholder" class="card">
+    <div class="placeholder">
+      <div class="ico">📋</div>
+      上の <b>「勤怠チェック実行」</b> ボタンで<br>
+      <code>python3 src/main.py check --month 2026-04</code> を subprocess で実行し、<br>
+      結果をここに表示します。
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  <div>自動生成される成果物：</div>
+  <ul>
+    <li>03_attendance-check/out/result_202604.json — 検知結果の完全JSON</li>
+    <li>03_attendance-check/out/run_summary_202604.json — 実行サマリ（他システム連携用）</li>
+    <li>03_attendance-check/out/notifications/U-001_sato.txt — 派遣元コーディネーター佐藤さん宛通知</li>
+    <li>03_attendance-check/out/notifications/U-002_takahashi.txt — 高橋さん宛通知</li>
+    <li>03_attendance-check/out/notifications/U-003_watanabe.txt — 渡辺さん宛通知</li>
+    <li>03_attendance-check/out/checklist/by_coordinator_202604.txt — コーディネーター別チェックリスト</li>
+    <li>03_attendance-check/out/checklist/by_client_site_202604.txt — 派遣先事業所別チェックリスト</li>
+    <li>03_attendance-check/out/skipped_records.csv — ルール除外レコード監査ログ</li>
+  </ul>
+</footer>
+
+<script>
+(function(){
+  // ========= 10 patterns (A-01 .. A-10) =========
+  const PATTERNS = [
+    { id: 'A-01', name: '退勤打刻漏れ' },
+    { id: 'A-02', name: '出勤打刻漏れ' },
+    { id: 'A-03', name: '休憩未入力' },
+    { id: 'A-04', name: '連続24時間超勤務' },
+    { id: 'A-05', name: '1日複数回の出退勤' },
+    { id: 'A-06', name: '残業申請漏れ / 休暇と打刻の矛盾' },
+    { id: 'A-07', name: '派遣先承認待ち滞留' },
+    { id: 'A-08', name: '深夜打刻（シフト外）' },
+    { id: 'A-09', name: 'シフトとの大幅乖離' },
+    { id: 'A-10', name: '重複打刻' },
+  ];
+
+  // ========= State =========
+  let lastResult = null;       // /run のレスポンス全体
+  let filterSev = 'all';
+  let filterPat = null;
+
+  // ========= DOM helpers =========
+  const $ = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[c]);
+
+  // ========= Run button =========
+  $('#btn-run').addEventListener('click', async () => {
+    const month = $('#month').value.trim();
+    const asof = $('#asof').value.trim();
+    await runCheck(month, asof);
+  });
+
+  $('#btn-gen').addEventListener('click', async () => {
+    const month = $('#month').value.trim();
+    showStatus('サンプルデータを再生成中…', false);
+    try {
+      const res = await fetch('/api/demo/03/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month, count: 12 }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.exit_code !== 0) throw new Error(data.stderr || data.error || '再生成に失敗しました');
+      showStatus('サンプル再生成完了。「勤怠チェック実行」で結果を更新してください。', false);
+    } catch (e) {
+      showStatus('エラー: ' + e.message, true);
+    }
+  });
+
+  async function runCheck(month, asof) {
+    setRunning(true);
+    showStatus(`${month} のデータを突合中… 266 件の打刻・申請・シフトを10パターンで検査中`, false);
+    try {
+      const res = await fetch('/api/demo/03/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month, as_of_date: asof }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'APIエラー');
+      if (data.exit_code !== 0) throw new Error(data.stderr || 'CLI がエラーを返しました');
+      lastResult = data;
+      render(data);
+      hideStatus();
+    } catch (e) {
+      showStatus('エラー: ' + e.message, true);
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  function setRunning(running) {
+    $('#btn-run').disabled = running;
+    $('#btn-run').textContent = running ? '実行中…' : '勤怠チェック実行';
+  }
+  function showStatus(text, err) {
+    const s = $('#status');
+    s.classList.toggle('show', true);
+    s.classList.toggle('err', !!err);
+    $('#spin').style.display = err ? 'none' : '';
+    $('#status-text').textContent = text;
+  }
+  function hideStatus() {
+    $('#status').classList.remove('show');
+  }
+
+  // ========= Render =========
+  function render(data) {
+    $('#placeholder').style.display = 'none';
+    $('#summary-section').style.display = '';
+
+    const result = data.result || {};
+    const summary = result.summary || {};
+    const items = result.items || result.findings || [];
+    const total = summary.total_records ?? summary.total_records_filtered ?? 0;
+    const flagged = summary.flagged_records ?? summary.found ?? items.length ?? 0;
+    const high = summary.high ?? (summary.by_severity && summary.by_severity.high) ?? 0;
+    const med = summary.medium ?? (summary.by_severity && summary.by_severity.medium) ?? 0;
+    const low = summary.low ?? (summary.by_severity && summary.by_severity.low) ?? 0;
+
+    // 数字アニメーション: 全件数→要確認件数 を段階的に
+    animateNumber('#num-total', 0, total, 900);
+    animateNumber('#num-flagged', total, flagged, 1400, '<span class="unit">件</span>');
+
+    $('#sev-high').textContent = high;
+    $('#sev-med').textContent = med;
+    $('#sev-low').textContent = low;
+
+    // パターン凡例
+    renderLegend(items);
+
+    // findings テーブル
+    filterSev = 'all';
+    filterPat = null;
+    renderFindings(items);
+
+    // notifications
+    renderDocs('#notif-grid', data.notifications || [], '通知メール');
+    $('#cnt-notif').textContent = `(${(data.notifications || []).length})`;
+
+    // checklists
+    renderDocs('#chk-grid', data.checklists || [], 'チェックリスト');
+    $('#cnt-chk').textContent = `(${(data.checklists || []).length})`;
+
+    // JSON
+    $('#json-out').textContent = JSON.stringify(data.summary || result.summary || {}, null, 2);
+
+    $('#cnt-findings').textContent = `(${items.length})`;
+  }
+
+  function animateNumber(sel, from, to, duration, suffix) {
+    const el = $(sel);
+    const start = performance.now();
+    const delta = to - from;
+    function tick(now) {
+      const p = Math.min(1, (now - start) / duration);
+      // easeOutCubic
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = Math.round(from + delta * eased);
+      el.innerHTML = val.toLocaleString('ja-JP') + (suffix || '');
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function renderLegend(items) {
+    const counts = {};
+    items.forEach(it => {
+      const pid = it.pattern_id || it.pattern;
+      if (pid) counts[pid] = (counts[pid] || 0) + 1;
+    });
+    const el = $('#legend');
+    el.innerHTML = '';
+    PATTERNS.forEach(p => {
+      const c = counts[p.id] || 0;
+      const div = document.createElement('div');
+      div.className = 'pat' + (c ? '' : ' dim');
+      div.style.opacity = c ? '1' : '0.45';
+      div.dataset.pat = p.id;
+      div.innerHTML = `<code>${p.id}</code>${esc(p.name)} <span style="color:var(--text-faint);margin-left:4px;">(${c})</span>`;
+      div.addEventListener('click', () => {
+        filterPat = (filterPat === p.id) ? null : p.id;
+        $$('#legend .pat').forEach(x => x.classList.toggle('active', x.dataset.pat === filterPat));
+        $('#chip-clear-pat').style.display = filterPat ? '' : 'none';
+        $('#chip-clear-pat').textContent = filterPat ? `パターン ${filterPat} のみ表示中 ✕` : '';
+        renderFindings((lastResult?.result?.items) || (lastResult?.result?.findings) || []);
+      });
+      el.appendChild(div);
+    });
+    $('#chip-clear-pat').addEventListener('click', () => {
+      filterPat = null;
+      $$('#legend .pat').forEach(x => x.classList.remove('active'));
+      $('#chip-clear-pat').style.display = 'none';
+      renderFindings((lastResult?.result?.items) || (lastResult?.result?.findings) || []);
+    }, { once: false });
+  }
+
+  function renderFindings(items) {
+    const sevRank = { high: 0, medium: 1, low: 2 };
+    const filtered = items.filter(it => {
+      if (filterSev !== 'all' && (it.severity !== filterSev)) return false;
+      if (filterPat && (it.pattern_id || it.pattern) !== filterPat) return false;
+      return true;
+    }).slice().sort((a, b) => {
+      const sa = sevRank[a.severity] ?? 9;
+      const sb = sevRank[b.severity] ?? 9;
+      if (sa !== sb) return sa - sb;
+      return (a.date || '').localeCompare(b.date || '');
+    });
+
+    const body = $('#findings-body');
+    body.innerHTML = '';
+    if (!filtered.length) {
+      body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-faint);">該当なし</td></tr>`;
+    } else {
+      filtered.forEach(it => {
+        const tr = document.createElement('tr');
+        tr.className = `row-${it.severity}`;
+        const patId = it.pattern_id || it.pattern || '';
+        const patName = it.pattern_name || it.pattern_label || '';
+        const staffName = it.staff_name || '';
+        const staffId = it.staff_id || '';
+        const site = [it.client_name, it.client_site].filter(Boolean).join(' / ');
+        const assignee = it.assignee_name || it.assignee_id || '';
+        tr.innerHTML = `
+          <td><span class="badge-sev ${esc(it.severity)}">${sevLabel(it.severity)}</span></td>
+          <td style="white-space:nowrap;font-family:ui-monospace,Menlo,monospace;font-size:12px;">${esc(it.date)}</td>
+          <td><span class="staff-name">${esc(staffName)}</span><span class="staff-id">${esc(staffId)}</span></td>
+          <td style="font-size:12px;">${esc(site)}</td>
+          <td><span class="pat-badge">${esc(patId)}</span> ${esc(patName)}</td>
+          <td class="action">${esc(it.recommended_action || '')}</td>
+          <td style="font-size:12px;white-space:nowrap;">${esc(assignee)}</td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+    $('#visible-count').textContent = `表示: ${filtered.length} / ${items.length} 件`;
+  }
+
+  function sevLabel(s) {
+    return s === 'high' ? '高' : s === 'medium' ? '中' : s === 'low' ? '低' : (s || '-');
+  }
+
+  function renderDocs(sel, docs, kind) {
+    const el = $(sel);
+    el.innerHTML = '';
+    if (!docs.length) {
+      el.innerHTML = `<div class="placeholder">（${kind}は生成されませんでした）</div>`;
+      return;
+    }
+    docs.forEach(d => {
+      const card = document.createElement('div');
+      card.className = 'doc-card';
+      card.innerHTML = `
+        <div class="head">
+          <span class="name">${esc(d.name)}</span>
+          <span class="tag">${kind}</span>
+        </div>
+        <pre>${esc(d.content || '')}</pre>
+      `;
+      el.appendChild(card);
+    });
+  }
+
+  // ========= Tabs =========
+  $$('#tabs .tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('#tabs .tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      $$('.tab-panel').forEach(p => p.classList.remove('active'));
+      $(`#panel-${tab}`).classList.add('active');
+    });
+  });
+
+  // ========= Severity chips =========
+  $$('.toolbar .chip[data-sev]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      $$('.toolbar .chip[data-sev]').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      filterSev = chip.dataset.sev;
+      renderFindings((lastResult?.result?.items) || (lastResult?.result?.findings) || []);
+    });
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>02 端数処理チェッカー | AI × CS 活用デモ</title>
+<style>
+  :root {
+    --primary: #0066CC;
+    --primary-dark: #0052a3;
+    --accent: #FF7A45;
+    --success: #2DA358;
+    --danger: #D93025;
+    --bg: #F5F7FA;
+    --card: #FFFFFF;
+    --text: #1F2933;
+    --muted: #6B7785;
+    --border: #E4E7EB;
+    --shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 10px 30px rgba(15, 23, 42, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== 共通ヘッダー ===== */
+  .topnav {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topnav .brand {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    text-decoration: none;
+    margin-right: 24px;
+  }
+  .topnav .tab {
+    padding: 8px 14px;
+    border-radius: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .topnav .tab:hover { background: #F0F4F8; color: var(--text); }
+  .topnav .tab.active {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  /* ===== ヒーロー ===== */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 24px 20px;
+  }
+  .hero h1 {
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .hero .subtitle {
+    font-size: 16px;
+    color: var(--muted);
+    margin: 0;
+  }
+  .hero .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    background: #E8F1FB;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+
+  /* ===== レイアウト ===== */
+  .layout {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* ===== カード ===== */
+  .card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 16px;
+  }
+
+  /* ===== 入力フォーム ===== */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .field input[type="time"],
+  .field input[type="number"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--text);
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.12);
+  }
+  .row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .hint-inline {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* ===== ボタン ===== */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--primary);
+    color: #fff;
+    font-size: 16px;
+    padding: 14px 20px;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.25);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 102, 204, 0.35);
+  }
+  .btn-secondary {
+    background: #EEF2F6;
+    color: var(--text);
+    margin-top: 10px;
+  }
+  .btn-secondary:hover:not(:disabled) { background: #E2E8F0; }
+
+  /* ===== CLI 実行中表示 ===== */
+  .cli-status {
+    margin-top: 16px;
+    padding: 12px;
+    background: #0F1A2A;
+    color: #B6E2FF;
+    border-radius: 8px;
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 12px;
+    word-break: break-all;
+    display: none;
+  }
+  .cli-status.visible { display: block; }
+  .cli-status .label {
+    color: #7FD8FF;
+    font-weight: 700;
+    margin-right: 6px;
+  }
+  .spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 2px solid rgba(127, 216, 255, 0.3);
+    border-top-color: #7FD8FF;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: -1px;
+    margin-right: 6px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ===== インパクトバナー ===== */
+  .impact {
+    background: linear-gradient(135deg, #FF7A45 0%, #FF5722 100%);
+    color: #fff;
+    border-radius: 16px;
+    padding: 32px 28px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(255, 122, 69, 0.35);
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .impact::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .impact .impact-label {
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0.95;
+    letter-spacing: 0.05em;
+    margin-bottom: 8px;
+  }
+  .impact .impact-daily {
+    font-size: 56px;
+    font-weight: 900;
+    line-height: 1;
+    margin: 6px 0;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .impact .impact-daily .unit {
+    font-size: 28px;
+    font-weight: 700;
+    margin-left: 4px;
+    opacity: 0.9;
+  }
+  .impact .impact-monthly {
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0.95;
+    margin-top: 10px;
+  }
+  .impact .impact-monthly .big {
+    font-size: 32px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    margin: 0 4px;
+  }
+  .impact.placeholder {
+    background: #E4E7EB;
+    color: var(--muted);
+    box-shadow: none;
+  }
+  .impact.placeholder .impact-daily { font-size: 28px; opacity: 0.5; }
+
+  /* ===== 比較テーブル（カード表示） ===== */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 700px) {
+    .rules-grid { grid-template-columns: 1fr; }
+  }
+  .rule-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .rule-card.fair { border-color: var(--muted); }
+  .rule-card.positive { border-color: var(--success); }
+  .rule-card.negative { border-color: var(--danger); }
+  .rule-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+  .rule-card .rule-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 4px;
+    min-height: 36px;
+  }
+  .rule-card .rule-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .rule-card.fair .rule-badge { background: #EEF2F6; color: var(--muted); }
+  .rule-card.positive .rule-badge { background: #E8F6EE; color: var(--success); }
+  .rule-card.negative .rule-badge { background: #FCEAE8; color: var(--danger); }
+  .rule-card .rule-net {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .rule-card .rule-pay {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    margin: 4px 0;
+  }
+  .rule-card .rule-diff {
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .rule-card.fair .rule-diff { color: var(--muted); }
+  .rule-card.positive .rule-diff { color: var(--success); }
+  .rule-card.negative .rule-diff { color: var(--danger); }
+
+  /* ===== Explain パネル ===== */
+  .explain-panel {
+    background: #F8FAFC;
+    border-left: 4px solid var(--primary);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-top: 16px;
+    display: none;
+  }
+  .explain-panel.visible { display: block; }
+  .explain-panel h3 {
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 8px;
+    color: var(--primary);
+  }
+  .explain-panel pre {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.7;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--text);
+  }
+
+  /* ===== 生 stdout トグル ===== */
+  details.raw {
+    margin-top: 20px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #FAFBFC;
+  }
+  details.raw summary {
+    padding: 12px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--muted);
+    user-select: none;
+  }
+  details.raw summary:hover { color: var(--text); }
+  details.raw pre {
+    margin: 0;
+    padding: 16px;
+    background: #0F1A2A;
+    color: #D7E4F5;
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-x: auto;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+  }
+
+  /* ===== プレースホルダー結果 ===== */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+  .empty-state .icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+
+  /* ===== ヒント ===== */
+  .hint-card {
+    background: #FFF8EC;
+    border: 1px solid #FBD38D;
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #7B4E00;
+    margin-bottom: 20px;
+  }
+  .hint-card strong { color: #5C3B00; }
+
+  /* エラー */
+  .error-msg {
+    background: #FCEAE8;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+  .error-msg.visible { display: block; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="/" class="brand">AI × CS 活用デモ</a>
+  <a href="/dashboard/01.html" class="tab">01 CSV加工</a>
+  <a href="/dashboard/02.html" class="tab active">02 端数処理</a>
+  <a href="/dashboard/03.html" class="tab">03 勤怠チェック</a>
+  <a href="/04_yesno-diagnosis/src/index.html" class="tab">04 運用整備診断</a>
+</nav>
+
+<header class="hero">
+  <span class="tag">02 / 端数処理</span>
+  <h1>02 端数処理チェッカー</h1>
+  <p class="subtitle">請求・給与の透明化で説明コスト削減</p>
+</header>
+
+<main class="layout">
+
+  <!-- 左: 入力パネル -->
+  <section>
+    <div class="card">
+      <h2>打刻データ</h2>
+
+      <div class="row-2">
+        <div class="field">
+          <label for="punch-in">出勤時刻</label>
+          <input type="time" id="punch-in" value="09:03" step="60" />
+        </div>
+        <div class="field">
+          <label for="punch-out">退勤時刻</label>
+          <input type="time" id="punch-out" value="18:07" step="60" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="hourly">時給（円）</label>
+        <input type="number" id="hourly" value="1800" min="0" step="50" />
+      </div>
+
+      <div class="field">
+        <label for="break-min">休憩（分）</label>
+        <input type="number" id="break-min" value="60" min="0" step="15" />
+      </div>
+
+      <button class="btn btn-primary" id="btn-run">3ルール比較実行</button>
+      <button class="btn btn-secondary" id="btn-explain" disabled>explain で説明生成</button>
+
+      <div class="cli-status" id="cli-status">
+        <div><span class="spinner"></span><span class="label">CLI 実行中…</span></div>
+        <div id="cli-cmd" style="margin-top:6px; opacity:0.85;"></div>
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+    </div>
+
+    <div class="hint-card">
+      <strong>ためしてみよう</strong><br />
+      打刻時刻や時給を変えると、<br />
+      ルール間の差額がどう変わるか試してください。<br />
+      「1分単位 vs 15分丸め」の差が見える化されます。
+    </div>
+  </section>
+
+  <!-- 右: 結果表示 -->
+  <section>
+
+    <!-- インパクトバナー -->
+    <div class="impact placeholder" id="impact">
+      <div class="impact-label">最大差額 / 日</div>
+      <div class="impact-daily">— <span class="unit">円</span></div>
+      <div class="impact-monthly">「3ルール比較実行」を押してください</div>
+    </div>
+
+    <!-- 比較カード -->
+    <div class="card">
+      <h2>ルール比較結果</h2>
+      <div id="rules-wrap">
+        <div class="empty-state">
+          <div class="icon">—</div>
+          まだ実行されていません
+        </div>
+      </div>
+
+      <!-- explain -->
+      <div class="explain-panel" id="explain-panel">
+        <h3>なぜこの結果か（3行説明）</h3>
+        <pre id="explain-text"></pre>
+      </div>
+
+      <!-- 生 stdout -->
+      <details class="raw" id="raw-details" style="display:none;">
+        <summary>CLI の生出力を見る（ASCIIテーブル）</summary>
+        <pre id="raw-stdout"></pre>
+      </details>
+    </div>
+
+  </section>
+
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+
+  const punchIn = $('punch-in');
+  const punchOut = $('punch-out');
+  const hourlyEl = $('hourly');
+  const breakEl = $('break-min');
+  const btnRun = $('btn-run');
+  const btnExplain = $('btn-explain');
+  const cliStatus = $('cli-status');
+  const cliCmd = $('cli-cmd');
+  const errorMsg = $('error-msg');
+  const impact = $('impact');
+  const rulesWrap = $('rules-wrap');
+  const explainPanel = $('explain-panel');
+  const explainText = $('explain-text');
+  const rawDetails = $('raw-details');
+  const rawStdout = $('raw-stdout');
+
+  let lastPayload = null;
+
+  // HH:MM → H:MM（先頭0を除去して CLI の "9:03,18:07" 形式に）
+  function toCliTime(value) {
+    if (!value) return '';
+    const [h, m] = value.split(':');
+    return `${parseInt(h, 10)}:${m}`;
+  }
+
+  function buildPunch() {
+    return `${toCliTime(punchIn.value)},${toCliTime(punchOut.value)}`;
+  }
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.add('visible');
+  }
+  function clearError() {
+    errorMsg.classList.remove('visible');
+    errorMsg.textContent = '';
+  }
+
+  // ------------------------------------------------------------
+  // stdout の ASCII テーブルから3ルールの行をパースする
+  // 各行は 全角スペース区切り風 + 多スペース区切り
+  // フォーマット例:
+  //  1分単位（フェア）                                  8時間04分     14,520円          ±0円
+  //  15分丸め（増加方向 / スタッフ有利）                       8時間15分     14,850円        +330円
+  //  15分丸め（減少方向 / 会社有利）                         7時間45分     13,950円        -570円
+  // ------------------------------------------------------------
+  function parseStdout(text) {
+    const lines = text.split(/\r?\n/);
+    const rules = [];
+    let maxDiffText = null;
+    let maxMonthlyText = null;
+
+    for (const raw of lines) {
+      const line = raw.replace(/\s+$/, '');
+      if (!line.trim()) continue;
+
+      // 最大差額行
+      // 例: ルール間 最大差額: 900円（月20日換算: 18,000円）
+      const m = line.match(/最大差額[:：]\s*([\d,]+)\s*円[^0-9]+([\d,]+)\s*円/);
+      if (m) {
+        maxDiffText = m[1];
+        maxMonthlyText = m[2];
+        continue;
+      }
+
+      // 各ルール行: 「時間XX分」「XXX,XXX円」「±/+/- XXX円」をいっぺんに探す
+      const timeMatch = line.match(/(\d+)時間(\d+)分/);
+      const payMatch = line.match(/([\d,]+)\s*円/);
+      const diffMatch = line.match(/([±\+\-])\s*([\d,]+)\s*円\s*$/);
+      if (timeMatch && payMatch && diffMatch) {
+        // ルール名 = 行頭から timeMatch までの部分
+        const nameRaw = line.substring(0, line.indexOf(timeMatch[0])).trim();
+        // ヘッダー行（「ルール  Net  支払額  基準との差」）は除外
+        if (!nameRaw || /^ルール\b/.test(nameRaw)) continue;
+
+        const sign = diffMatch[1];
+        const diffVal = parseInt(diffMatch[2].replace(/,/g, ''), 10);
+        let diffNum = 0;
+        let kind = 'fair';
+        if (sign === '+') { diffNum = diffVal; kind = 'positive'; }
+        else if (sign === '-') { diffNum = -diffVal; kind = 'negative'; }
+        else { diffNum = 0; kind = 'fair'; }
+
+        rules.push({
+          name: nameRaw,
+          net: `${timeMatch[1]}時間${timeMatch[2]}分`,
+          pay: payMatch[1],
+          diffDisplay: `${sign}${diffMatch[2]}円`.replace('±0円', '±0円'),
+          diffNum,
+          kind,
+        });
+      }
+    }
+
+    return {
+      rules,
+      maxDiff: maxDiffText ? parseInt(maxDiffText.replace(/,/g, ''), 10) : null,
+      maxMonthly: maxMonthlyText ? parseInt(maxMonthlyText.replace(/,/g, ''), 10) : null,
+    };
+  }
+
+  // ------------------------------------------------------------
+  // 数字カウントアップ
+  // ------------------------------------------------------------
+  function countUp(el, from, to, duration, formatter) {
+    const start = performance.now();
+    const diff = to - from;
+    function step(now) {
+      const t = Math.min(1, (now - start) / duration);
+      // ease-out
+      const eased = 1 - Math.pow(1 - t, 3);
+      const cur = Math.round(from + diff * eased);
+      el.textContent = formatter(cur);
+      if (t < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  function fmtYen(n) { return n.toLocaleString('ja-JP'); }
+
+  // ------------------------------------------------------------
+  // 結果描画
+  // ------------------------------------------------------------
+  function renderResult(parsed) {
+    // インパクトバナー
+    if (parsed.maxDiff != null && parsed.maxMonthly != null) {
+      impact.classList.remove('placeholder');
+      impact.innerHTML = `
+        <div class="impact-label">ルール間 最大差額 / 日</div>
+        <div class="impact-daily"><span id="impact-daily-num">0</span><span class="unit">円</span></div>
+        <div class="impact-monthly">月20日換算で <span class="big" id="impact-monthly-num">0</span> 円の差</div>
+      `;
+      const dailyEl = document.getElementById('impact-daily-num');
+      const monthlyEl = document.getElementById('impact-monthly-num');
+      countUp(dailyEl, 0, parsed.maxDiff, 900, fmtYen);
+      countUp(monthlyEl, 0, parsed.maxMonthly, 1300, fmtYen);
+    } else {
+      impact.classList.add('placeholder');
+      impact.innerHTML = `
+        <div class="impact-label">最大差額 / 日</div>
+        <div class="impact-daily">— <span class="unit">円</span></div>
+        <div class="impact-monthly">差額情報を取得できませんでした</div>
+      `;
+    }
+
+    // 比較カード
+    if (parsed.rules.length === 0) {
+      rulesWrap.innerHTML = `
+        <div class="empty-state">
+          <div class="icon">!</div>
+          ルール情報をパースできませんでした。<br />
+          下の「CLIの生出力」をご確認ください。
+        </div>
+      `;
+      return;
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'rules-grid';
+    for (const r of parsed.rules) {
+      const card = document.createElement('div');
+      card.className = `rule-card ${r.kind}`;
+      const badgeText =
+        r.kind === 'fair' ? '基準' :
+        r.kind === 'positive' ? 'スタッフ有利' : '会社有利';
+      card.innerHTML = `
+        <div class="rule-badge">${badgeText}</div>
+        <div class="rule-name">${escapeHtml(r.name)}</div>
+        <div class="rule-net">Net: ${escapeHtml(r.net)}</div>
+        <div class="rule-pay">${escapeHtml(r.pay)}<span style="font-size:16px; font-weight:700;">円</span></div>
+        <div class="rule-diff">${escapeHtml(r.diffDisplay)}</div>
+      `;
+      grid.appendChild(card);
+    }
+    rulesWrap.innerHTML = '';
+    rulesWrap.appendChild(grid);
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, (c) => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  // ------------------------------------------------------------
+  // compare 実行
+  // ------------------------------------------------------------
+  async function runCompare() {
+    clearError();
+    explainPanel.classList.remove('visible');
+    btnRun.disabled = true;
+    btnExplain.disabled = true;
+
+    const payload = {
+      punch: buildPunch(),
+      hourly: parseInt(hourlyEl.value, 10) || 1800,
+      break: parseInt(breakEl.value, 10) || 0,
+    };
+    lastPayload = payload;
+
+    cliStatus.classList.add('visible');
+    cliCmd.textContent = 'python3 src/main.py compare ...（送信中）';
+
+    try {
+      const res = await fetch('/api/demo/02/run', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(`APIエラー: ${data.error || res.statusText}`);
+        return;
+      }
+      cliCmd.textContent = data.cmd || '';
+      if (data.exit_code !== 0) {
+        showError(`CLI が異常終了しました (exit_code=${data.exit_code})`);
+      }
+
+      // パース & 描画
+      const parsed = parseStdout(data.stdout || '');
+      renderResult(parsed);
+
+      // 生 stdout
+      rawStdout.textContent = data.stdout || '(出力なし)';
+      rawDetails.style.display = 'block';
+
+      // explain ボタンを有効化
+      btnExplain.disabled = false;
+    } catch (e) {
+      showError(`通信エラー: ${e.message}`);
+    } finally {
+      btnRun.disabled = false;
+      // CLIステータスは実行中のスピナーを消す
+      cliStatus.innerHTML = `
+        <div><span class="label">実行コマンド:</span></div>
+        <div style="margin-top:6px; opacity:0.85;">${escapeHtml(cliCmd.textContent)}</div>
+      `;
+    }
+  }
+
+  // ------------------------------------------------------------
+  // explain 実行
+  // ------------------------------------------------------------
+  async function runExplain() {
+    if (!lastPayload) return;
+    clearError();
+    btnExplain.disabled = true;
+    explainText.textContent = '生成中…';
+    explainPanel.classList.add('visible');
+
+    const payload = {
+      rule: 'samples/rules/company_friendly.yml',
+      punch: lastPayload.punch,
+      hourly: lastPayload.hourly,
+    };
+
+    try {
+      const res = await fetch('/api/demo/02/explain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showError(`APIエラー: ${data.error || res.statusText}`);
+        explainPanel.classList.remove('visible');
+        return;
+      }
+      if (data.exit_code !== 0) {
+        showError(`explain が異常終了しました (exit_code=${data.exit_code})`);
+      }
+      explainText.textContent = (data.stdout || '').trim() || '(説明出力が空でした)';
+    } catch (e) {
+      showError(`通信エラー: ${e.message}`);
+      explainPanel.classList.remove('visible');
+    } finally {
+      btnExplain.disabled = false;
+    }
+  }
+
+  btnRun.addEventListener('click', runCompare);
+  btnExplain.addEventListener('click', runExplain);
+
+  // Enter キーで実行
+  [punchIn, punchOut, hourlyEl, breakEl].forEach((el) => {
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') runCompare();
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
