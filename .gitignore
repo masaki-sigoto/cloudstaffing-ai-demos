@@ -1,0 +1,82 @@
+# ============================================================
+# AI × CS 活用デモ .gitignore
+# ============================================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual env
+.venv/
+venv/
+env/
+ENV/
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS / Cloud sync
+.Spotlight-V100
+.Trashes
+._*
+.fseventsd
+.DocumentRevisions-V100
+.TemporaryItems
+.apdisk
+
+# ============================================================
+# プロジェクト固有: 実行時生成物は除外
+# ============================================================
+
+# 01 CSV加工: 変換結果・テンプレート
+01_csv-automation/out/
+01_csv-automation/templates/
+
+# 02 端数処理: 出力
+02_rounding-checker/out/
+
+# 03 勤怠チェック: 実行結果
+03_attendance-check/out/
+# samples/ 配下の generate-samples 再生成ファイルも commit 済みを正とするため、
+# 再生成された新しい samples は git 管理外にしたい場合はここに追記
+# 03_attendance-check/samples/
+
+# Claude Code 個人状態
+.claude/state/
+.claude/sessions/
+.claude/logs/
+.claude/debug/
+
+# ログ
+*.log
+
+# 環境変数（機密）
+.env
+.env.local
+.env.*.local
+
+# ============================================================
+# Git 管理下に保持する: 各プロジェクト .claude/commands/（スラッシュコマンド）
+# → 明示的に ! で除外解除
+# ============================================================
+!.claude/commands/
