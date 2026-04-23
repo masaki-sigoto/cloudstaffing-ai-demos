@@ -1,0 +1,2185 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="運用整備ナビゲーター：派遣管理運用の整備状況をYES/NOで簡易診断する導入前ヒアリング補助ツール">
+<title>運用整備ナビゲーター｜クラウドスタッフィング</title>
+<style>
+/* ========== デザイントークン ========== */
+:root {
+  --bg: #f3f7fb;
+  --surface: #ffffff;
+  --fg: #1f2a37;
+  --muted: #5b6b7c;
+  --line: #dfe7ef;
+  --primary: #1a73a8;            /* 青系：クラウドスタッフィングの清潔感 */
+  --primary-dark: #135a84;
+  --primary-soft: #e7f1f8;
+  --accent: #2ea89a;             /* 薄緑アクセント */
+  --disclaimer-bg: #fff7da;
+  --disclaimer-fg: #5b4700;
+  --tag-warn-bg: #fdf2c4;
+  --tag-warn-fg: #6a4b00;
+  --tag-warn-border: #e7c454;
+  --ok: #2f8f4b;
+  --danger: #c2453a;
+  --shadow: 0 6px 24px rgba(19,90,132,0.08);
+  --shadow-lg: 0 14px 40px rgba(19,90,132,0.14);
+  --radius: 12px;
+
+  --pattern-a: #4a89c8;
+  --pattern-b: #2f8f72;
+  --pattern-c: #1a73a8;
+  --pattern-d: #b5792e;
+  --pattern-e: #b8443f;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  min-height: 100vh;
+}
+
+button { font-family: inherit; cursor: pointer; }
+
+/* ========== ヘッダー（免責バー、全画面共通・固定） M-14 ========== */
+#app-header {
+  background: var(--disclaimer-bg);
+  border-bottom: 1px solid var(--tag-warn-border);
+  color: var(--disclaimer-fg);
+  padding: 8px 20px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+#disclaimer { margin: 0; }
+#disclaimer strong { color: var(--danger); }
+
+@media screen {
+  #app-header { position: sticky; top: 0; z-index: 100; }
+  .disclaimer-print { display: none; }
+}
+
+/* ========== 警告バナー ========== */
+.warn-banner {
+  background: #fff3cd;
+  border-bottom: 1px solid #e0b400;
+  color: #5b4700;
+  padding: 8px 20px;
+  font-size: 13px;
+  text-align: center;
+}
+.error-banner {
+  background: #fde2e0;
+  border-bottom: 1px solid var(--danger);
+  color: #7a1a14;
+  padding: 8px 20px;
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ========== メイン ========== */
+#app-root {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+[data-screen] { animation: fadeIn .28s ease-out; }
+[data-screen][hidden] { display: none !important; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+h1, h2, h3 { color: var(--fg); }
+a { color: var(--primary); }
+
+/* ========== スプラッシュ ========== */
+#screen-splash {
+  text-align: center;
+  padding-top: 28px;
+}
+.brand-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: .04em;
+  margin-bottom: 10px;
+}
+#splash-title {
+  font-size: 34px;
+  margin: 6px 0 4px;
+  letter-spacing: .02em;
+}
+.splash-sub {
+  color: var(--muted);
+  margin: 0 0 24px;
+  font-size: 15px;
+}
+.splash-modal {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 28px 24px;
+  max-width: 560px;
+  margin: 0 auto 18px;
+  text-align: left;
+  box-shadow: var(--shadow);
+}
+.splash-modal h2 {
+  margin-top: 0;
+  font-size: 16px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.splash-modal label.radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin: 8px 0;
+  cursor: pointer;
+  transition: background .15s;
+}
+.splash-modal label.radio:hover { background: var(--primary-soft); }
+.splash-modal label.radio input { margin-top: 4px; }
+.splash-modal label.radio .label-main { font-weight: 600; }
+.splash-modal label.radio .label-sub { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+.splash-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+.btn-primary, .btn-secondary, .btn-ghost, .btn-danger {
+  font-size: 16px;
+  padding: 14px 22px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: transform .08s ease, background .15s, box-shadow .15s;
+  font-weight: 600;
+}
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(26,115,168,.25);
+}
+.btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+.btn-primary:active:not(:disabled) { transform: translateY(1px); }
+.btn-secondary {
+  background: #fff;
+  color: var(--primary-dark);
+  border-color: var(--primary);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--primary-soft); }
+.btn-ghost {
+  background: transparent;
+  color: var(--muted);
+  border-color: var(--line);
+  font-weight: 500;
+  font-size: 13px;
+  padding: 8px 14px;
+}
+.btn-ghost:hover:not(:disabled) { background: #eef2f6; }
+.btn-danger {
+  background: #fff;
+  color: var(--danger);
+  border-color: #f1b6b2;
+  font-size: 13px;
+  padding: 8px 14px;
+}
+.btn-danger:hover:not(:disabled) { background: #fdecea; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+
+#btn-resume[hidden] { display: none !important; }
+.splash-footnote {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 16px;
+}
+
+/* ========== 質問画面 ========== */
+#screen-question { max-width: 720px; margin: 0 auto; }
+
+#progress {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+#progress-text {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+#progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e6edf4;
+  border-radius: 999px;
+  overflow: hidden;
+}
+#progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  width: 0%;
+  border-radius: 999px;
+  transition: width .3s ease-out;
+}
+
+.question-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 28px 24px;
+  box-shadow: var(--shadow);
+}
+.q-domain {
+  color: var(--primary-dark);
+  background: var(--primary-soft);
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+#q-title {
+  font-size: 22px;
+  line-height: 1.55;
+  margin: 0 0 18px;
+}
+#q-hint-wrap {
+  margin-bottom: 20px;
+}
+#q-hint-wrap summary {
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 13px;
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--primary-soft);
+  list-style: none;
+}
+#q-hint-wrap summary::-webkit-details-marker { display: none; }
+#q-hint-wrap summary::before { content: "▸ "; }
+#q-hint-wrap[open] summary::before { content: "▾ "; }
+#q-hint-wrap p {
+  margin: 10px 2px 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.65;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border-left: 3px solid var(--primary);
+  border-radius: 4px;
+}
+
+#q-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+.choice-btn {
+  text-align: left;
+  padding: 18px 22px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  color: var(--fg);
+  font-size: 16px;
+  font-weight: 600;
+  transition: all .15s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.choice-btn .choice-key {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--primary-soft);
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.choice-btn:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(26,115,168,.12);
+}
+.choice-btn:active { transform: translateY(0); }
+.choice-btn.yes { }
+.choice-btn.yes .choice-key { background: #dceeff; color: var(--primary-dark); }
+.choice-btn.no  .choice-key { background: #f2f5f8; color: var(--muted); }
+
+.q-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+.q-nav .hint-key { color: var(--muted); font-size: 12px; }
+
+/* ========== 結果画面 ========== */
+#screen-result { max-width: 860px; margin: 0 auto; }
+
+#pattern-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  animation: slideIn .45s ease-out;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.pattern-header {
+  padding: 28px 30px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--pattern-c), var(--primary-dark));
+}
+.pattern-header.pat-A { background: linear-gradient(135deg, var(--pattern-a), #3069a7); }
+.pattern-header.pat-B { background: linear-gradient(135deg, var(--pattern-b), #216f58); }
+.pattern-header.pat-C { background: linear-gradient(135deg, var(--pattern-c), var(--primary-dark)); }
+.pattern-header.pat-D { background: linear-gradient(135deg, var(--pattern-d), #8d5a1f); }
+.pattern-header.pat-E { background: linear-gradient(135deg, var(--pattern-e), #8a2e2a); }
+
+.pattern-header .eyebrow {
+  font-size: 13px;
+  opacity: .8;
+  letter-spacing: .04em;
+}
+#r-title {
+  font-size: 28px;
+  margin: 4px 0 10px;
+  color: #fff;
+}
+.pattern-header .scores {
+  display: flex;
+  gap: 18px;
+  font-size: 13px;
+  opacity: .9;
+}
+.pattern-header .scores span b { font-size: 18px; }
+.elapsed {
+  margin: 6px 0 0;
+  font-size: 12px;
+  opacity: .85;
+}
+
+.pattern-body {
+  padding: 22px 30px 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.pattern-body > section { min-width: 0; }
+.pattern-body h3 {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 4px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line);
+}
+.pattern-body .full-row { grid-column: 1 / -1; }
+
+#r-reasons, #r-summary5, #r-cautions {
+  margin: 0;
+  padding-left: 22px;
+}
+#r-summary5 li, #r-cautions li, #r-reasons li { margin: 4px 0; font-size: 14px; }
+#r-effort { margin: 0; font-size: 15px; font-weight: 600; }
+
+.tag-yellow {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tag-yellow li {
+  background: var(--tag-warn-bg);
+  color: var(--tag-warn-fg);
+  border: 1px solid var(--tag-warn-border);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.tag-yellow:empty::after {
+  content: "（特になし）";
+  color: var(--muted);
+  font-size: 12px;
+}
+.tag-yellow.no-items::after {
+  content: "（特になし）";
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#pii-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 14px;
+  margin-top: 10px;
+}
+#pii-fields label {
+  font-size: 12px;
+  color: var(--muted);
+  display: block;
+}
+#pii-fields input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  background: #fafcfd;
+}
+#pii-fields input:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); background: #fff; }
+.pii-note { font-size: 11px; color: var(--muted); grid-column: 1 / -1; margin: 4px 0 0; }
+
+#btn-toggle-pii {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+#btn-toggle-pii:hover { background: #f4f7fa; }
+
+#sales-memo {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  background: #fafcfd;
+}
+
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0 6px;
+  justify-content: center;
+}
+.result-actions button { padding: 11px 18px; font-size: 14px; }
+
+.sub-matches {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #f4f7fa;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+}
+
+/* ========== 印刷プレビュー ========== */
+#screen-print { max-width: 900px; margin: 0 auto; }
+.print-controls {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  box-shadow: var(--shadow);
+}
+.print-controls h2 { font-size: 16px; margin: 0 12px 0 0; }
+.print-controls label { font-size: 13px; display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+
+#print-area {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18mm 14mm;
+  box-shadow: var(--shadow);
+}
+.disclaimer-print {
+  font-size: 11pt;
+  color: #000;
+  border-bottom: 1px solid #000;
+  padding-bottom: 4pt;
+  margin-bottom: 8pt;
+  font-weight: 600;
+}
+.print-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11pt;
+  color: #333;
+  margin-bottom: 10pt;
+  border-bottom: 1px dashed #999;
+  padding-bottom: 6pt;
+}
+.print-header span { }
+
+#print-body h1 { font-size: 18pt; margin: 4pt 0; }
+#print-body h2 { font-size: 14pt; margin: 10pt 0 4pt; }
+#print-body h3 { font-size: 12pt; margin: 8pt 0 4pt; color: #111; border-bottom: 1px solid #ccc; padding-bottom: 2pt; }
+#print-body ul, #print-body ol { padding-left: 18pt; margin: 4pt 0; }
+#print-body li { margin: 2pt 0; font-size: 10.5pt; }
+#print-body table { border-collapse: collapse; width: 100%; margin: 4pt 0 8pt; font-size: 10pt; }
+#print-body th, #print-body td { border: 1px solid #888; padding: 3pt 6pt; vertical-align: top; text-align: left; }
+#print-body th { background: #eef2f6; font-size: 10pt; }
+.print-pattern-badge {
+  display: inline-block;
+  padding: 3pt 9pt;
+  border-radius: 3pt;
+  background: #1a73a8;
+  color: #fff;
+  font-size: 11pt;
+  font-weight: 700;
+  margin-right: 6pt;
+}
+.print-pattern-badge.pat-A { background: var(--pattern-a); }
+.print-pattern-badge.pat-B { background: var(--pattern-b); }
+.print-pattern-badge.pat-C { background: var(--pattern-c); }
+.print-pattern-badge.pat-D { background: var(--pattern-d); }
+.print-pattern-badge.pat-E { background: var(--pattern-e); }
+
+.print-hearing-tags {
+  display: inline-block;
+  padding: 2pt 6pt;
+  background: var(--tag-warn-bg);
+  color: var(--tag-warn-fg);
+  border: 1px solid var(--tag-warn-border);
+  border-radius: 3pt;
+  font-size: 9.5pt;
+  margin: 1pt 4pt 1pt 0;
+}
+
+.sales-memo-print {
+  margin-top: 12pt;
+  padding: 8pt 10pt;
+  background: #fafafa;
+  border: 1px solid #888;
+  border-radius: 3pt;
+}
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1f2a37;
+  color: #fff;
+  padding: 10px 20px;
+  border-radius: 999px;
+  font-size: 13px;
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity .2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 0.95; }
+
+/* コピーフォールバックモーダル */
+.copy-modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(31,42,55,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000;
+}
+.copy-modal {
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 20px;
+  max-width: 480px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+}
+.copy-modal h3 { margin-top: 0; font-size: 16px; }
+.copy-modal textarea {
+  width: 100%;
+  min-height: 140px;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  resize: vertical;
+}
+.copy-modal-actions { margin-top: 10px; display: flex; justify-content: flex-end; gap: 8px; }
+
+.field-note {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 4px 0 10px;
+}
+
+/* レスポンシブ */
+@media (max-width: 640px) {
+  #splash-title { font-size: 26px; }
+  .pattern-body { grid-template-columns: 1fr; }
+  .pattern-header { padding: 22px 20px; }
+  #pii-fields { grid-template-columns: 1fr; }
+}
+
+/* ========== 印刷用CSS ========== */
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  body {
+    background: #fff;
+    font-family: "Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+    font-size: 10.5pt;
+    color: #000;
+    margin-top: 14mm;
+  }
+  #app-header { position: static; display: none; }
+  .warn-banner, .error-banner { display: none; }
+  .no-print { display: none !important; }
+  #app-root { max-width: none; padding: 0; margin: 0; }
+  [data-screen]:not(#screen-print) { display: none !important; }
+  #screen-print { max-width: none; margin: 0; }
+  .print-controls { display: none !important; }
+  #print-area {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    background: #fff;
+  }
+  .disclaimer-print {
+    display: block;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    border-bottom: 1px solid #000;
+    padding: 2mm 10mm;
+    background: #fff;
+    font-size: 9pt;
+    z-index: 9999;
+  }
+  #pattern-card { page-break-inside: avoid; }
+  .section { page-break-inside: avoid; }
+  .sales-memo-print { page-break-before: auto; }
+  body.print-summary .print-detail-only { display: none !important; }
+  body.print-detail  .print-summary-only { display: none !important; }
+  a { color: #000; text-decoration: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- M-14: 免責バー -->
+<header id="app-header" role="banner">
+  <p id="disclaimer" aria-live="polite">
+    <strong>【ご案内】</strong>本ツールは診断補助であり、法令判定ではありません。最終判断は専門家レビューを前提とします。
+  </p>
+</header>
+
+<div id="warn-banner" class="warn-banner no-print" hidden>
+  保存機能は無効です。セッション中のみ回答を保持します。
+</div>
+<div id="error-banner" class="error-banner no-print" hidden>
+  設定エラーを検出しました。管理者にお問い合わせください。
+</div>
+
+<main id="app-root">
+
+  <!-- ========== スプラッシュ ========== -->
+  <section id="screen-splash" data-screen aria-labelledby="splash-title">
+    <div class="brand-badge">CLOUD STAFFING / 運用整備診断</div>
+    <h1 id="splash-title">運用整備ナビゲーター</h1>
+    <p class="splash-sub">派遣管理運用の整備状況を、YES/NO の質問で素早く可視化します。</p>
+
+    <div class="splash-modal" role="dialog" aria-labelledby="persist-title">
+      <h2 id="persist-title">回答データの取り扱い</h2>
+      <label class="radio">
+        <input type="radio" name="persist" value="none" checked>
+        <span>
+          <span class="label-main">保存しない（一時利用）</span>
+          <span class="label-sub">ブラウザを閉じると回答は残りません。安全側のデフォルトです。</span>
+        </span>
+      </label>
+      <label class="radio">
+        <input type="radio" name="persist" value="local">
+        <span>
+          <span class="label-main">保存する（続きから再開可能）</span>
+          <span class="label-sub">この端末のブラウザ内に回答を保存します（顧客情報は保存しません）。</span>
+        </span>
+      </label>
+
+      <div class="splash-actions">
+        <button id="btn-start-short" type="button" class="btn-primary">ショート版で開始（7問／約5分）</button>
+        <button id="btn-start-full" type="button" class="btn-secondary">フル版で開始（最大15問／約10分）</button>
+        <button id="btn-resume" type="button" class="btn-ghost" hidden disabled>続きから再開</button>
+      </div>
+    </div>
+
+    <p class="splash-footnote">
+      <button id="btn-clear-storage" type="button" class="btn-danger">保存データをクリア</button>
+    </p>
+    <p class="splash-footnote">
+      営業の初回商談は <strong>ショート版（5分）</strong>、導入支援のキックオフは <strong>フル版（10分）</strong> が推奨です。
+    </p>
+  </section>
+
+  <!-- ========== 質問 ========== -->
+  <section id="screen-question" data-screen hidden aria-labelledby="q-title">
+    <div id="progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="7"
+         title="到達予定数は回答により変動する場合があります">
+      <span id="progress-text">0 / 7</span>
+      <div id="progress-bar"><div id="progress-bar-fill"></div></div>
+    </div>
+
+    <article class="question-card">
+      <div id="q-domain" class="q-domain"></div>
+      <h2 id="q-title"></h2>
+      <details id="q-hint-wrap">
+        <summary>これはどういう意味？</summary>
+        <p id="q-hint"></p>
+      </details>
+      <div id="q-choices" role="radiogroup" aria-labelledby="q-title"></div>
+      <div class="q-nav">
+        <button id="btn-back" type="button" class="btn-ghost">← 前の質問に戻る</button>
+        <span class="hint-key">キーボード: Y/N で回答、← で戻る</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- ========== 結果 ========== -->
+  <section id="screen-result" data-screen hidden aria-labelledby="r-title">
+    <article id="pattern-card">
+      <div class="pattern-header" id="pattern-header">
+        <div class="eyebrow">診断結果</div>
+        <h2 id="r-title">―</h2>
+        <div class="scores" id="r-scores"></div>
+        <p class="elapsed">所要時間: <span id="r-elapsed">–</span></p>
+      </div>
+      <div class="pattern-body">
+        <section aria-label="該当理由">
+          <h3>該当理由</h3>
+          <ul id="r-reasons"></ul>
+          <div id="r-submatches" class="sub-matches" hidden></div>
+        </section>
+        <section aria-label="設定工数目安">
+          <h3>設定工数目安</h3>
+          <p id="r-effort"></p>
+        </section>
+        <section aria-label="推奨設定" class="full-row">
+          <h3>推奨設定サマリ</h3>
+          <ol id="r-summary5"></ol>
+        </section>
+        <section aria-label="要ヒアリング項目" class="full-row">
+          <h3>要ヒアリング</h3>
+          <ul id="r-hearing-tags" class="tag-yellow"></ul>
+        </section>
+        <section aria-label="注意点・リスク" class="full-row">
+          <h3>注意点 / リスク</h3>
+          <ul id="r-cautions"></ul>
+        </section>
+        <section aria-label="企業名等の入力" class="full-row">
+          <h3>ヒアリングシートのヘッダー情報（任意）</h3>
+          <button id="btn-toggle-pii" type="button" aria-expanded="false" aria-controls="pii-fields">
+            企業名等を入力する
+          </button>
+          <div id="pii-fields" hidden>
+            <div>
+              <label for="inp-company-name">企業名</label>
+              <input id="inp-company-name" type="text" autocomplete="off" inputmode="text" placeholder="例: 株式会社●●" data-pii="companyName">
+            </div>
+            <div>
+              <label for="inp-contact-name">担当者名</label>
+              <input id="inp-contact-name" type="text" autocomplete="off" inputmode="text" placeholder="例: 山田 太郎" data-pii="contactName">
+            </div>
+            <div>
+              <label for="inp-date">日付</label>
+              <input id="inp-date" type="date" data-pii="date">
+            </div>
+            <p class="pii-note">入力欄は編集フォーカス時以外マスキング表示。入力値は localStorage に保存されません。</p>
+          </div>
+        </section>
+        <section aria-label="営業担当者向けメモ" class="full-row">
+          <h3>営業担当者向けメモ（任意・S-07）</h3>
+          <textarea id="sales-memo" rows="3" placeholder="詳細版印刷時のみ・「営業メモを印字する」トグル ON のときだけ印字されます"></textarea>
+          <p class="field-note">メモは画面/ブラウザには保存されず、セッション中のみ保持されます。</p>
+        </section>
+      </div>
+    </article>
+
+    <div class="result-actions">
+      <button id="btn-print-summary" type="button" class="btn-primary">要約版を印刷</button>
+      <button id="btn-print-detail" type="button" class="btn-secondary">詳細版を印刷</button>
+      <button id="btn-copy-summary" type="button" class="btn-secondary">結果サマリをコピー</button>
+      <button id="btn-restart" type="button" class="btn-ghost">最初からやり直す</button>
+      <button id="btn-clear-storage-2" type="button" class="btn-danger">保存データをクリア</button>
+    </div>
+  </section>
+
+  <!-- ========== 印刷プレビュー ========== -->
+  <section id="screen-print" data-screen hidden aria-labelledby="print-title">
+    <div class="print-controls no-print">
+      <h2 id="print-title">印刷プレビュー</h2>
+      <label><input type="radio" name="printMode" value="summary" checked> 要約版（A4 1枚）</label>
+      <label><input type="radio" name="printMode" value="detail"> 詳細版（A4 2〜3枚）</label>
+      <label><input type="checkbox" id="chk-anonymize" checked> 匿名化して印刷</label>
+      <label><input type="checkbox" id="chk-print-salesmemo"> 営業メモを印字する（詳細版のみ）</label>
+      <button id="btn-do-print" type="button" class="btn-primary">印刷</button>
+      <button id="btn-back-to-result" type="button" class="btn-ghost">結果画面に戻る</button>
+    </div>
+    <div id="print-area">
+      <div class="disclaimer-print">本ツールは診断補助であり、法令判定ではありません。最終判断は専門家レビューを前提とします。</div>
+      <div id="print-header" class="print-header">
+        <span id="print-header-company" data-pii="companyName"></span>
+        <span id="print-header-contact" data-pii="contactName"></span>
+        <span id="print-header-date" data-pii="date"></span>
+      </div>
+      <div id="print-body"></div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ========== 4.1 回答値の正規コード ==========
+  const ANS = Object.freeze({
+    YES: 'YES',
+    NO: 'NO',
+    UNKNOWN: 'UNKNOWN',
+    KYOTEI: 'KYOTEI',
+    KINTOU: 'KINTOU',
+    UNDECIDED: 'UNDECIDED',
+    SELF_RUN: 'SELF_RUN',
+    OUTSOURCED: 'OUTSOURCED',
+    NOT_READY: 'NOT_READY',
+    DEFINED: 'DEFINED',
+    PART: 'PART',
+  });
+
+  // ========== 5.1 QUESTIONS ==========
+  const QUESTIONS = {
+    Q1: {
+      id:'Q1',
+      text:'派遣スタッフの就業先は、複数の派遣先事業所にまたがりますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=>'Q2',
+      axis:['P'],
+      domain:'発注／契約',
+      hint:'派遣先の事業所単位で抵触日が管理されるため、複数事業所への派遣がある場合は登録粒度を細かくする必要があります。',
+      triage:()=>({needHearing:false}),
+    },
+    Q2: {
+      id:'Q2',
+      text:'派遣元として、拠点（営業所・支社）は3箇所以上ありますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=> s.answers.Q2===ANS.YES ? 'Q3' : 'Q4',
+      axis:['L'],
+      domain:'データ運用',
+      hint:'拠点数が多いほど組織ツリーを深く切り、案件・勤怠・請求データに対する権限設定が複雑になります。',
+      triage:()=>({needHearing:false}),
+    },
+    Q3: {
+      id:'Q3',
+      text:'拠点ごとに、契約・勤怠・請求を承認する営業所長などの承認者がいますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=> s.answers.Q3===ANS.YES ? 'Q5' : 'Q6',
+      axis:['A'],
+      domain:'契約／勤怠／請求',
+      hint:'拠点単位の承認者がいる場合、承認ルートを「拠点→本社」の2段階以上で設計します。',
+      triage:()=>({needHearing:false}),
+    },
+    Q4: {
+      id:'Q4',
+      text:'本社以外に、案件管理・請求処理などの実質的な管理機能を持つ拠点はありますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=> s.answers.Q4===ANS.YES ? 'Q5' : 'Q7',
+      axis:['L'],
+      domain:'案件／請求',
+      hint:'管理機能がある拠点は、マスタ編集権限やレポート閲覧範囲を個別設定します。',
+      triage:()=>({needHearing:false}),
+    },
+    Q5: {
+      id:'Q5',
+      text:'本社で全拠点の案件・勤怠・請求・評価を一元管理したいですか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=> s.answers.Q5===ANS.YES ? 'Q6' : 'Q8',
+      axis:['A'],
+      domain:'案件／勤怠／請求／評価',
+      hint:'一元管理型の場合、本社管理部門に全拠点横断の閲覧権限を付与します。',
+      triage:()=>({needHearing:false}),
+    },
+    Q6: {
+      id:'Q6',
+      text:'承認者が不在時、契約・勤怠・請求の代理承認ルートを決めていますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=>'Q9',
+      axis:['C'],
+      domain:'契約／勤怠／請求',
+      hint:'未整備の場合、導入時に代理承認フローの設計が別途必要になります。',
+      triage:(a)=> a===ANS.NO ? {needHearing:true,reason:'代理承認ルート未整備（Q6）'} : {needHearing:false},
+    },
+    Q7: {
+      id:'Q7',
+      text:'承認は1段階（直属上司のみ）で十分ですか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=> s.answers.Q7===ANS.YES ? 'Q10' : 'Q9',
+      axis:['A'],
+      domain:'契約／勤怠',
+      hint:'小規模事業者は1段階承認でOK。ただし内部統制上は2段階推奨。',
+      triage:()=>({needHearing:false}),
+    },
+    Q8: {
+      id:'Q8',
+      text:'拠点間で給与・勤務ルール（勤怠締め・時給体系など）は異なりますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=>'Q10',
+      axis:['L'],
+      domain:'勤怠／請求',
+      hint:'異なる場合、拠点ごとに給与テンプレート・勤務マスタを分けて登録します。',
+      triage:()=>({needHearing:false}),
+    },
+    Q9: {
+      id:'Q9',
+      text:'派遣先からの勤怠承認を電子化したいですか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=>'Q10',
+      axis:[],
+      domain:'勤怠',
+      hint:'電子化する場合、派遣先担当者のアカウント発行と承認権限設定が必要です。',
+      triage:()=>({needHearing:false}),
+    },
+    Q10: {
+      id:'Q10',
+      text:'職種別に給与テーブルを分けていますか？（請求単価にも影響する観点）',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=>'Q12',
+      axis:['C'],
+      domain:'請求／法対応',
+      hint:'同一労働同一賃金対応上、職種別テーブルの分離は要検討事項です。',
+      triage:()=>({needHearing:false}),
+    },
+    Q12: {
+      id:'Q12',
+      text:'同一派遣先での継続派遣が3年（抵触日）を超える可能性のある案件を扱っていますか／扱う予定ですか？',
+      type:'MULTI',
+      choices:[
+        {value:ANS.YES,label:'はい'},
+        {value:ANS.NO,label:'いいえ'},
+        {value:ANS.UNKNOWN,label:'わからない'},
+      ],
+      branch:(s)=>'Q13',
+      axis:['C'],
+      domain:'法対応／契約',
+      hint:'派遣法上の抵触日の管理対象となり得る案件の有無を確認します。本アプリでは抵触日管理は原則ON前提です。',
+      triage:(a)=> a===ANS.UNKNOWN ? {needHearing:true,reason:'Q12（抵触日対象案件：わからない）'} : {needHearing:false},
+    },
+    Q13: {
+      id:'Q13',
+      text:'同一労働同一賃金対応の方式は確定していますか？',
+      type:'MULTI',
+      choices:[
+        {value:ANS.KYOTEI,label:'労使協定方式'},
+        {value:ANS.KINTOU,label:'均等均衡方式'},
+        {value:ANS.UNDECIDED,label:'未確定'},
+      ],
+      branch:(s)=>'Q14',
+      axis:['C'],
+      domain:'法対応／請求',
+      hint:'方式未確定の場合は双方の初期設定を提示し「顧客の労務担当と確認要」と注記します。',
+      triage:(a)=> a===ANS.UNDECIDED ? {needHearing:true,reason:'Q13（同一労働同一賃金：未確定）'} : {needHearing:false},
+    },
+    Q14: {
+      id:'Q14',
+      text:'同一人物が複数拠点・複数部署を兼任する運用はありますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=>'Q15',
+      axis:[],
+      domain:'契約／データ運用',
+      hint:'兼務ユーザーは複数組織への所属許可と権限の論理和制御が必要です。',
+      triage:()=>({needHearing:false}),
+    },
+    Q15: {
+      id:'Q15',
+      text:'今後1年以内に、拠点追加・M&A・事業拡大の計画はありますか？',
+      type:'YN',
+      choices:[{value:ANS.YES,label:'はい'},{value:ANS.NO,label:'いいえ'}],
+      branch:(s)=> s.mode==='short' ? null : 'Q16',
+      axis:[],
+      domain:'データ運用',
+      hint:'拡張計画がある場合、組織コード体系を拡張に耐える桁数で設計します。',
+      triage:()=>({needHearing:false}),
+    },
+    Q16: {
+      id:'Q16',
+      text:'36協定（時間外労働上限）の運用はどの体制ですか？',
+      type:'MULTI',
+      choices:[
+        {value:ANS.SELF_RUN,label:'自社運用'},
+        {value:ANS.OUTSOURCED,label:'顧問社労士に委託'},
+        {value:ANS.NOT_READY,label:'未整備'},
+        {value:ANS.UNKNOWN,label:'わからない'},
+      ],
+      branch:(s)=>'Q17',
+      axis:['C'],
+      domain:'法対応／勤怠',
+      hint:'36協定の締結・届出は法令上の手続きで本アプリは関与しません。SaaS上での超過監視要件を判定します。',
+      triage:(a)=> (a===ANS.NOT_READY||a===ANS.UNKNOWN) ? {needHearing:true,reason:'Q16（36協定運用体制）'} : {needHearing:false},
+    },
+    Q17: {
+      id:'Q17',
+      text:'抵触日の運用体制（3ヶ月前通知・法務承認等）は定まっていますか？',
+      type:'MULTI',
+      choices:[
+        {value:ANS.DEFINED,label:'定めている'},
+        {value:ANS.PART,label:'一部のみ'},
+        {value:ANS.NOT_READY,label:'未整備'},
+        {value:ANS.UNKNOWN,label:'わからない'},
+      ],
+      branch:(s)=>null,
+      axis:['C'],
+      domain:'法対応／契約',
+      hint:'抵触日管理機能自体はONを前提とし、通知間隔と承認ルート設計の詳細度を判定します。',
+      triage:(a)=> (a===ANS.PART||a===ANS.NOT_READY||a===ANS.UNKNOWN) ? {needHearing:true,reason:'Q17（抵触日運用体制）'} : {needHearing:false},
+    },
+  };
+
+  const SHORT_ROUTE = ['Q2','Q3','Q5','Q12','Q13','Q6','Q15'];
+
+  // ========== 6.1 PATTERNS ==========
+  const PATTERNS = {
+    A: {
+      id:'A', name:'基本整備型', colorVar:'--pattern-a',
+      summary5:[
+        '組織ツリー: 本社1層のみ（部署マスタ3〜5件）',
+        '承認ルート: 直属上司のみ（1段階）',
+        '権限: 管理者 / 一般の2ロール',
+        '案件紐付け: 全案件が本社所属',
+        '抵触日管理: 原則ON・簡易アラート',
+      ],
+      effort:'2〜3営業日',
+      cautions:[
+        '成長時の拡張には耐えないため、拠点追加計画があるならパターンBを推奨',
+        '抵触日・同一労働同一賃金・36協定の体制整備は小規模でも派遣元として法令上必要',
+      ],
+      detail:[
+        { category:'組織',     label:'本社1層のみ（部署マスタ3〜5件）', status:'推奨' },
+        { category:'承認',     label:'直属上司1段階承認', status:'推奨' },
+        { category:'権限',     label:'管理者 / 一般の2ロール', status:'推奨' },
+        { category:'案件',     label:'全案件を本社所属に紐付け', status:'推奨' },
+        { category:'法対応',   label:'抵触日管理ON・簡易アラート', status:'推奨' },
+        { category:'法対応',   label:'同一労働同一賃金の方式確定', status:'要確認' },
+        { category:'法対応',   label:'36協定の運用体制確立', status:'要確認' },
+        { category:'拡張',     label:'拠点追加計画がある場合は B への移行を検討', status:'要ヒアリング' },
+      ],
+    },
+    B: {
+      id:'B', name:'複数拠点対応型', colorVar:'--pattern-b',
+      summary5:[
+        '組織ツリー: 本社 → 営業所の2層',
+        '承認ルート: 営業所長 → 本社管理部（2段階）',
+        '権限: 拠点別ロール（所長/所員/本社管理/経理）',
+        '案件紐付け: 受注拠点所属、横串は担当者で解決',
+        '抵触日管理ON・同一労働同一賃金は労使協定方式',
+      ],
+      effort:'5〜7営業日',
+      cautions:['代理承認ルールの未整備が多いため、導入時に必ず整理'],
+      detail:[
+        { category:'組織',     label:'本社 → 営業所の2層（拠点コード2桁）', status:'推奨' },
+        { category:'承認',     label:'営業所長 → 本社管理部（2段階）', status:'推奨' },
+        { category:'権限',     label:'拠点別ロール（所長/所員/本社管理/経理）', status:'推奨' },
+        { category:'案件',     label:'受注拠点所属、横串は担当者で解決', status:'推奨' },
+        { category:'法対応',   label:'抵触日管理ON・同一労働同一賃金は労使協定方式', status:'推奨' },
+        { category:'承認',     label:'代理承認ルールの整備', status:'要ヒアリング' },
+        { category:'拡張',     label:'今後のエリア統括導入余地', status:'要確認' },
+      ],
+    },
+    C: {
+      id:'C', name:'将来拡張対応型', colorVar:'--pattern-c',
+      summary5:[
+        '組織ツリー: 本社 → エリア統括 → 営業所の3層',
+        '承認ルート: 所長→エリア長→本社（最大3段階）',
+        '権限: 細粒度ロール7〜10種、横断閲覧は本社職のみ',
+        '案件紐付け: 受注拠点×担当拠点の二軸、横串フラグ',
+        '拠点コード4桁、階層別プレフィックス体系',
+      ],
+      effort:'10〜15営業日',
+      cautions:['導入プロジェクトとして3ヶ月計画推奨、段階リリース'],
+      detail:[
+        { category:'組織',     label:'本社 → エリア統括 → 営業所の3層', status:'推奨' },
+        { category:'承認',     label:'所長→エリア長→本社（最大3段階）', status:'推奨' },
+        { category:'権限',     label:'細粒度ロール7〜10種、横断閲覧は本社職のみ', status:'推奨' },
+        { category:'案件',     label:'受注拠点×担当拠点の二軸、横串フラグ', status:'推奨' },
+        { category:'データ運用', label:'拠点コード4桁、階層別プレフィックス体系', status:'推奨' },
+        { category:'法対応',   label:'抵触日管理ON・同一労働同一賃金方式確定', status:'要確認' },
+        { category:'拡張',     label:'3ヶ月計画で段階リリース', status:'要ヒアリング' },
+      ],
+    },
+    D: {
+      id:'D', name:'多事業所分散型', colorVar:'--pattern-d',
+      summary5:[
+        '各拠点を独立事業体として登録（疑似マルチテナント）',
+        '承認ルート: 拠点内完結、本社は参照のみ',
+        '権限: 拠点長に強め、本社は閲覧限定',
+        '案件紐付け: 拠点内完結、横串は原則なし',
+        '給与テンプレート: 拠点ごとに分離',
+      ],
+      effort:'拠点数 × 2営業日',
+      cautions:['横串経営レポートにはBI連携が別途必要'],
+      detail:[
+        { category:'組織',     label:'各拠点を独立事業体として登録（疑似マルチテナント）', status:'推奨' },
+        { category:'承認',     label:'拠点内完結、本社は参照のみ', status:'推奨' },
+        { category:'権限',     label:'拠点長に強め、本社は閲覧限定', status:'推奨' },
+        { category:'案件',     label:'拠点内完結、横串は原則なし', status:'推奨' },
+        { category:'勤怠／請求', label:'給与テンプレートを拠点ごとに分離', status:'推奨' },
+        { category:'法対応',   label:'拠点ごとの法対応状況の棚卸し', status:'要確認' },
+        { category:'拡張',     label:'横串経営レポートの BI 連携', status:'要ヒアリング' },
+      ],
+    },
+    E: {
+      id:'E', name:'法対応要整備型', colorVar:'--pattern-e',
+      summary5:[
+        '組織ツリー: B/C をベース（拠点数・承認は他軸で決定）',
+        '承認ルート: 抵触日通知ワークフロー整備を優先',
+        '権限: 法務/労務ロールの新設・抵触日限定アクセス',
+        '案件紐付け: 派遣法区分（3年ルール対象/除外）を明示',
+        '36協定超過監視は体制整備後にON（未整備時は要ヒアリング）',
+      ],
+      effort:'8〜12営業日（体制整備含む）',
+      cautions:[
+        '「法対応が強化されている型」ではなく「法対応体制の整備が必要な型」である',
+        '派遣法改正時の見直し運用プロセスを別途定義',
+      ],
+      detail:[
+        { category:'組織',     label:'B/C をベースに拠点数・承認を他軸で決定', status:'推奨' },
+        { category:'承認',     label:'抵触日通知ワークフローの整備を最優先', status:'推奨' },
+        { category:'権限',     label:'法務／労務ロールの新設・抵触日限定アクセス', status:'推奨' },
+        { category:'案件',     label:'派遣法区分（3年ルール対象/除外）を明示', status:'推奨' },
+        { category:'法対応',   label:'36協定の運用体制（自社／社労士委託）の確定', status:'要ヒアリング' },
+        { category:'法対応',   label:'抵触日の運用体制（3ヶ月前通知・法務承認）整備', status:'要ヒアリング' },
+        { category:'法対応',   label:'代理承認ルートの未整備解消', status:'要ヒアリング' },
+        { category:'法対応',   label:'派遣法改正時の見直し運用プロセスの定義', status:'要確認' },
+        { category:'拡張',     label:'体制整備後に 36 協定超過監視 ON', status:'要確認' },
+      ],
+    },
+  };
+
+  // ========== 6.2 PATTERN_RULES ==========
+  const PATTERN_RULES = [
+    {
+      priority: 1, patternId: 'E',
+      ruleLabel: 'C=3（法対応要整備：Q16 未整備/わからない OR Q17 未整備/一部のみ/わからない OR Q6=NO）',
+      predicate: (s) => s.C === 3,
+    },
+    {
+      priority: 2, patternId: 'C',
+      ruleLabel: 'L=3 かつ A>=2 かつ Q15=YES（多拠点＋階層承認＋拡張計画）',
+      predicate: (s) => s.L === 3 && s.A >= 2 && s.answers.Q15 === ANS.YES,
+    },
+    {
+      priority: 3, patternId: 'D',
+      ruleLabel: 'L=3 かつ (Q5=NO または Q8=YES)（多拠点・本社集約せず／拠点別ルール）',
+      predicate: (s) => s.L === 3 && (s.answers.Q5 === ANS.NO || s.answers.Q8 === ANS.YES),
+    },
+    {
+      priority: 4, patternId: 'B',
+      ruleLabel: 'L=2 かつ A=2（少拠点＋2段階承認）',
+      predicate: (s) => s.L === 2 && s.A === 2,
+    },
+    {
+      priority: 5, patternId: 'A',
+      ruleLabel: 'L=1 かつ A=1 かつ C=1（単一拠点＋1段階承認＋基本整備）',
+      predicate: (s) => s.L === 1 && s.A === 1 && s.C === 1,
+    },
+  ];
+  const FALLBACK_RULE_LABEL = 'フォールバック（最近傍、確定度: 中）';
+
+  const APP_VERSION = '1.0.0';
+  const DEBUG = false;
+
+  // ========== State ==========
+  const State = (function(){
+    function defaultState(){
+      return {
+        mode: 'splash',
+        persistMode: 'none',
+        screen: 'splash',
+        answers: {},
+        history: [],
+        currentQid: null,
+        shortIndex: 0,
+        pii: { companyName: '', contactName: '', date: '' },
+        salesMemo: '',
+        startedAt: null,
+        completedAt: null,
+        result: null,
+        ui: {
+          printMode: 'summary',
+          localStorageWarning: false,
+          anonymize: true,
+          printSalesMemo: false,
+          piiFieldsOpen: false,
+        },
+        appVersion: APP_VERSION,
+      };
+    }
+    let current = defaultState();
+    return {
+      get: () => current,
+      setAnswer: (qid, val) => { current.answers[qid] = val; },
+      setMode: (m) => { current.mode = m; },
+      setScreen: (s) => { current.screen = s; },
+      setCurrentQid: (qid) => { current.currentQid = qid; },
+      pushHistory: (qid) => { current.history.push(qid); },
+      popHistory: () => current.history.pop(),
+      reset: () => { current = defaultState(); },
+      snapshot: () => JSON.parse(JSON.stringify(current)),
+      applySnapshot: (snap) => { Object.assign(current, snap); },
+    };
+  })();
+
+  // ========== Persist ==========
+  const Persist = (function(){
+    const KEY = 'cs_yesno_diag_v1';
+    const SUPPORTED_MAJOR = '1';
+
+    function isAvailable(){
+      try { const k='__cs_t'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }
+      catch(e){ return false; }
+    }
+    function hasSavedSession(){
+      try { return !!localStorage.getItem(KEY); } catch(e){ return false; }
+    }
+    function save(){
+      const s = State.get();
+      if (s.persistMode !== 'local') return;
+      if (s.mode !== 'full' && s.mode !== 'short') return;
+      if (!s.currentQid) return;
+      const payload = {
+        appVersion: s.appVersion,
+        mode: s.mode,
+        persistMode: 'local',
+        currentQid: s.currentQid,
+        shortIndex: s.shortIndex,
+        answers: s.answers,
+        history: s.history,
+      };
+      try { localStorage.setItem(KEY, JSON.stringify(payload)); }
+      catch(e){ State.get().ui.localStorageWarning = true; }
+    }
+    function isValidPayload(snap){
+      if (!snap || typeof snap !== 'object') return false;
+      if (typeof snap.appVersion !== 'string') return false;
+      if (snap.mode !== 'full' && snap.mode !== 'short') return false;
+      if (snap.persistMode !== 'local') return false;
+      if (typeof snap.currentQid !== 'string' || !snap.currentQid) return false;
+      if (typeof snap.shortIndex !== 'number') return false;
+      if (!snap.answers || typeof snap.answers !== 'object') return false;
+      if (!Array.isArray(snap.history)) return false;
+      if (!(snap.currentQid in QUESTIONS)) return false;
+      for (const qid of snap.history) {
+        if (typeof qid !== 'string' || !(qid in QUESTIONS)) return false;
+      }
+      if (snap.mode === 'short') {
+        if (!Number.isInteger(snap.shortIndex)) return false;
+        if (snap.shortIndex < 0 || snap.shortIndex >= SHORT_ROUTE.length) return false;
+        if (snap.currentQid !== SHORT_ROUTE[snap.shortIndex]) return false;
+      } else {
+        if (snap.shortIndex !== 0) return false;
+      }
+      return true;
+    }
+    function load(){
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (!raw) return false;
+        let snap;
+        try { snap = JSON.parse(raw); }
+        catch(e){ clear(); return false; }
+        const major = typeof snap.appVersion === 'string' ? snap.appVersion.split('.')[0] : '';
+        if (major !== SUPPORTED_MAJOR) { clear(); return false; }
+        if (!isValidPayload(snap)) { clear(); return false; }
+        State.applySnapshot(snap);
+        return true;
+      } catch(e){ clear(); return false; }
+    }
+    function clear(){ try { localStorage.removeItem(KEY); } catch(e){} }
+    return { isAvailable, hasSavedSession, save, load, clear };
+  })();
+
+  // ========== Flow ==========
+  const Flow = (function(){
+    function startFull(){
+      State.setMode('full'); State.setCurrentQid('Q1');
+      State.get().history = []; State.get().shortIndex = 0;
+      State.get().startedAt = Date.now();
+    }
+    function startShort(){
+      State.setMode('short'); State.setCurrentQid(SHORT_ROUTE[0]);
+      State.get().history = []; State.get().shortIndex = 0;
+      State.get().startedAt = Date.now();
+    }
+    function next(){
+      const s = State.get();
+      let nextQid;
+      if (s.mode === 'short') {
+        if (s.shortIndex + 1 >= SHORT_ROUTE.length) return { done: true };
+        State.pushHistory(s.currentQid);
+        s.shortIndex += 1;
+        nextQid = SHORT_ROUTE[s.shortIndex];
+        State.setCurrentQid(nextQid);
+        return { nextQid };
+      }
+      nextQid = QUESTIONS[s.currentQid].branch(s);
+      if (nextQid === null) return { done: true };
+      State.pushHistory(s.currentQid);
+      State.setCurrentQid(nextQid);
+      return { nextQid };
+    }
+    function back(){
+      const s = State.get();
+      if (s.history.length === 0) return { noop: true };
+      const prev = State.popHistory();
+      delete s.answers[s.currentQid];
+      if (s.mode === 'short') s.shortIndex = Math.max(0, s.shortIndex - 1);
+      State.setCurrentQid(prev);
+      return { prevQid: prev };
+    }
+    function canGoBack(){ return State.get().history.length > 0; }
+    function current(){ return State.get().currentQid; }
+
+    function estimateRemaining(){
+      const s = State.get();
+      if (s.mode === 'short') return SHORT_ROUTE.length - s.shortIndex - 1;
+      const seen = new Set();
+      let qid = QUESTIONS[s.currentQid] ? QUESTIONS[s.currentQid].branch(s) : null;
+      let count = 0;
+      const MAX = Object.keys(QUESTIONS).length;
+      while (qid && count < MAX) {
+        if (seen.has(qid)) break;
+        seen.add(qid); count++;
+        qid = QUESTIONS[qid] ? QUESTIONS[qid].branch(s) : null;
+      }
+      return count;
+    }
+    function progress(){
+      const s = State.get();
+      if (s.mode === 'short') {
+        return { done: s.shortIndex, total: SHORT_ROUTE.length };
+      }
+      return {
+        done: s.history.length,
+        total: s.history.length + 1 + estimateRemaining(),
+      };
+    }
+    return { startFull, startShort, next, back, canGoBack, current, progress, estimateRemaining };
+  })();
+
+  // ========== Judge ==========
+  const Judge = (function(){
+    function calcL(a){
+      if (a.Q2 === ANS.YES) return 3;
+      if (a.Q2 === ANS.NO && a.Q4 === ANS.YES) return 2;
+      return 1;
+    }
+    function calcAFull(a, L){
+      let A = 1;
+      if (a.Q3 === ANS.YES) A = Math.max(A, 2);
+      if (a.Q5 === ANS.YES && L >= 2) A = Math.max(A, 2);
+      if (a.Q7 === ANS.YES) A = 1;
+      return A;
+    }
+    function calcAShort(a){
+      return a.Q3 === ANS.YES ? 2 : 1;
+    }
+    function calcCFull(a){
+      let C = 1;
+      if (a.Q12 === ANS.YES) C = Math.max(C, 2);
+      if (a.Q16 === ANS.NOT_READY || a.Q16 === ANS.UNKNOWN
+          || a.Q17 === ANS.PART
+          || a.Q17 === ANS.NOT_READY || a.Q17 === ANS.UNKNOWN
+          || a.Q6 === ANS.NO) {
+        C = 3;
+      }
+      return C;
+    }
+    function calcCShort(a){
+      let C = 1;
+      if (a.Q12 === ANS.YES || a.Q12 === ANS.UNKNOWN) C = Math.max(C, 2);
+      return C;
+    }
+    function calcFlags(a){ return { proxyApprovalMissing: a.Q6 === ANS.NO }; }
+    function calcP(a){ return a.Q1 === ANS.YES ? 'FINE' : 'COARSE'; }
+
+    function collectTags(a, mode, fallback){
+      const tags = [];
+      for (const q of Object.values(QUESTIONS)) {
+        const ans = a[q.id];
+        if (ans === undefined) continue;
+        const t = q.triage(ans);
+        if (t.needHearing) tags.push('要ヒアリング: ' + t.reason);
+      }
+      if (mode === 'short') {
+        tags.push('要ヒアリング（省略項目あり）: Q1/Q4/Q7/Q8/Q9/Q10/Q14/Q16/Q17');
+      }
+      if (fallback) tags.push('要ヒアリング（確定度: 中）');
+      return tags;
+    }
+
+    function nearestPattern(scores){
+      const refs = {
+        A:{L:1,A:1,C:1}, B:{L:2,A:2,C:2}, C:{L:3,A:2,C:2}, D:{L:3,A:2,C:1}, E:{L:2,A:2,C:3},
+      };
+      let best='A', bestDist=Infinity;
+      for (const [id,r] of Object.entries(refs)) {
+        const d = Math.abs(r.L-scores.L) + Math.abs(r.A-scores.A) + Math.abs(r.C-scores.C);
+        if (d < bestDist) { bestDist = d; best = id; }
+      }
+      return best;
+    }
+
+    function buildReasonHighlights(scores, answers){
+      const hl = [];
+      hl.push({ axis:'L', value: scores.L, qids:['Q2','Q4'] });
+      hl.push({ axis:'A', value: scores.A, qids:['Q3','Q5','Q7'] });
+      hl.push({ axis:'C', value: scores.C, qids:['Q6','Q12','Q13','Q16','Q17'] });
+      if (answers.Q15 === ANS.YES) hl.push({ axis:'EXT', value:'YES', qids:['Q15'] });
+      return hl;
+    }
+
+    function evaluate(){
+      const s = State.get();
+      const a = s.answers;
+      const L = calcL(a);
+      const A = s.mode === 'short' ? calcAShort(a) : calcAFull(a, L);
+      const C = s.mode === 'short' ? calcCShort(a) : calcCFull(a);
+      const P = calcP(a);
+      const flags = calcFlags(a);
+      const scoreCtx = { L, A, C, P, flags, answers: a };
+
+      let matched = null;
+      const subMatches = [];
+      for (const rule of PATTERN_RULES) {
+        if (rule.predicate(scoreCtx)) {
+          if (!matched) matched = rule;
+          else subMatches.push(rule.ruleLabel);
+        }
+      }
+      let pattern, priorityMatched, fallback = false;
+      if (matched) {
+        pattern = matched.patternId;
+        priorityMatched = matched.priority;
+      } else {
+        pattern = nearestPattern({L,A,C});
+        priorityMatched = 6;
+        fallback = true;
+      }
+      const tags = collectTags(a, s.mode, fallback);
+      return {
+        patternId: pattern, priorityMatched,
+        scores: { L, A, C, P }, flags,
+        tags, subMatches,
+        reasonHighlights: buildReasonHighlights({L,A,C}, a),
+        fallback,
+        matchedRuleLabel: matched ? matched.ruleLabel : FALLBACK_RULE_LABEL,
+      };
+    }
+    return { evaluate };
+  })();
+
+  // ========== Helpers ==========
+  function escapeHtml(str){
+    if (str === undefined || str === null) return '';
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function el(id){ return document.getElementById(id); }
+  function qsa(sel, root){ return Array.from((root||document).querySelectorAll(sel)); }
+
+  function maskText(val, kind){
+    if (!val) return '';
+    if (kind === 'companyName') return '株式会社●●●';
+    if (kind === 'contactName') return '●● ●●';
+    if (kind === 'date') return val; // 日付はマスクしない
+    return '●●●';
+  }
+  function answerLabel(qid, code){
+    const q = QUESTIONS[qid];
+    if (!q || code === undefined) return '（未回答）';
+    const c = q.choices.find(ch => ch.value === code);
+    return c ? c.label : String(code);
+  }
+  function axisSummary(score){
+    return 'L=' + score.L + ' / A=' + score.A + ' / C=' + score.C
+      + ' / 粒度=' + (score.P === 'FINE' ? '細' : '粗');
+  }
+  function formatElapsed(ms){
+    if (!ms || ms < 0) return '–';
+    const sec = Math.floor(ms / 1000);
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return m + '分' + (s < 10 ? '0' + s : s) + '秒';
+  }
+
+  // ========== Render ==========
+  const Render = (function(){
+
+    function show(screenId){
+      qsa('[data-screen]').forEach(sec => {
+        if (sec.id === 'screen-' + screenId) {
+          sec.hidden = false;
+          sec.setAttribute('data-active','true');
+        } else {
+          sec.hidden = true;
+          sec.removeAttribute('data-active');
+        }
+      });
+      State.setScreen(screenId);
+      window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+    }
+
+    function renderQuestion(){
+      const s = State.get();
+      const qid = s.currentQid;
+      const q = QUESTIONS[qid];
+      if (!q) { console.warn('Unknown qid', qid); show('splash'); return; }
+
+      // 進捗
+      updateProgress(Flow.progress());
+
+      // 業務領域バッジ
+      el('q-domain').textContent = q.domain + '（' + qid + '）';
+      el('q-title').textContent = q.text;
+      el('q-hint').textContent = q.hint || '';
+      el('q-hint-wrap').open = false;
+
+      // 選択肢
+      const holder = el('q-choices');
+      holder.innerHTML = '';
+      q.choices.forEach((c, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'choice-btn ' + (c.value === ANS.YES ? 'yes' : (c.value === ANS.NO ? 'no' : 'multi'));
+        btn.setAttribute('data-value', c.value);
+        btn.setAttribute('role','radio');
+        btn.setAttribute('aria-checked','false');
+        let keyHint = '';
+        if (q.type === 'YN') {
+          keyHint = c.value === ANS.YES ? 'Y' : 'N';
+        } else {
+          keyHint = String(i + 1);
+        }
+        btn.innerHTML = '<span class="choice-key">' + escapeHtml(keyHint) + '</span><span class="choice-label">' + escapeHtml(c.label) + '</span>';
+        btn.addEventListener('click', () => AppCore.onAnswer(qid, c.value));
+        holder.appendChild(btn);
+      });
+
+      updateBackButton(Flow.canGoBack());
+    }
+
+    function updateProgress({done,total}){
+      const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+      el('progress-bar-fill').style.width = pct + '%';
+      el('progress-text').textContent = done + ' / ' + total;
+      const pb = el('progress');
+      pb.setAttribute('aria-valuenow', String(done));
+      pb.setAttribute('aria-valuemax', String(total));
+    }
+
+    function updateBackButton(enabled){
+      const b = el('btn-back');
+      if (enabled) { b.disabled = false; b.removeAttribute('aria-disabled'); }
+      else { b.disabled = true; b.setAttribute('aria-disabled','true'); }
+    }
+
+    function renderResult(){
+      const s = State.get();
+      const r = s.result;
+      if (!r) return;
+      const p = PATTERNS[r.patternId];
+
+      const header = el('pattern-header');
+      header.className = 'pattern-header pat-' + r.patternId;
+
+      el('r-title').textContent = 'パターン' + r.patternId + '：' + p.name;
+      el('r-scores').innerHTML = '<span>拠点 <b>L=' + r.scores.L + '</b></span>'
+        + '<span>承認 <b>A=' + r.scores.A + '</b></span>'
+        + '<span>法対応 <b>C=' + r.scores.C + '</b></span>'
+        + '<span>粒度 <b>' + (r.scores.P === 'FINE' ? '細' : '粗') + '</b></span>';
+
+      const elapsedMs = s.completedAt && s.startedAt ? (s.completedAt - s.startedAt) : 0;
+      el('r-elapsed').textContent = formatElapsed(elapsedMs);
+
+      // 該当理由
+      const reasons = el('r-reasons');
+      reasons.innerHTML = '';
+      const reasonLines = [];
+      reasonLines.push('拠点軸 L=' + r.scores.L + '（' + (r.scores.L===3?'多拠点':r.scores.L===2?'少拠点':'単一拠点') + '）');
+      reasonLines.push('承認軸 A=' + r.scores.A + '（' + (r.scores.A>=2?'2段階以上':'1段階') + '）');
+      reasonLines.push('法対応軸 C=' + r.scores.C + '（' + (r.scores.C===3?'要整備':r.scores.C===2?'標準':'基本') + '）');
+      if (s.answers.Q15 === ANS.YES) reasonLines.push('拡張計画あり（Q15=はい）');
+      if (r.flags.proxyApprovalMissing) reasonLines.push('代理承認ルート未整備（Q6=いいえ）');
+      if (r.fallback) reasonLines.push('※ 決定表のどの条件にも一致せず、最近傍パターンを提示（確定度: 中）');
+      reasonLines.forEach(t => {
+        const li = document.createElement('li');
+        li.textContent = t;
+        reasons.appendChild(li);
+      });
+
+      // サブマッチ
+      const subEl = el('r-submatches');
+      if (r.subMatches && r.subMatches.length > 0) {
+        subEl.hidden = false;
+        subEl.innerHTML = '<strong>副次マッチ:</strong> ' + r.subMatches.map(escapeHtml).join(' ／ ');
+      } else {
+        subEl.hidden = true;
+        subEl.innerHTML = '';
+      }
+
+      // 推奨設定サマリ
+      const sumEl = el('r-summary5');
+      sumEl.innerHTML = '';
+      p.summary5.forEach(t => {
+        const li = document.createElement('li'); li.textContent = t; sumEl.appendChild(li);
+      });
+
+      // 工数
+      el('r-effort').textContent = p.effort;
+
+      // 注意点
+      const cEl = el('r-cautions');
+      cEl.innerHTML = '';
+      p.cautions.forEach(t => {
+        const li = document.createElement('li'); li.textContent = t; cEl.appendChild(li);
+      });
+
+      // 要ヒアリング
+      const tagEl = el('r-hearing-tags');
+      tagEl.innerHTML = '';
+      if (r.tags.length === 0) {
+        tagEl.classList.add('no-items');
+      } else {
+        tagEl.classList.remove('no-items');
+        r.tags.forEach(t => {
+          const li = document.createElement('li');
+          li.textContent = t;
+          tagEl.appendChild(li);
+        });
+      }
+
+      // PII / sales memo 反映
+      el('inp-company-name').value = s.pii.companyName || '';
+      el('inp-contact-name').value = s.pii.contactName || '';
+      el('inp-date').value = s.pii.date || '';
+      el('sales-memo').value = s.salesMemo || '';
+      togglePiiFields(s.ui.piiFieldsOpen);
+    }
+
+    function togglePiiFields(open){
+      const btn = el('btn-toggle-pii');
+      const box = el('pii-fields');
+      State.get().ui.piiFieldsOpen = !!open;
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      btn.textContent = open ? '企業名等を閉じる' : '企業名等を入力する';
+      box.hidden = !open;
+    }
+
+    function showLocalStorageWarning(){
+      el('warn-banner').hidden = false;
+    }
+    function showConfigErrorBanner(msgs){
+      const b = el('error-banner');
+      b.hidden = false;
+      b.textContent = '設定エラー: ' + (msgs ? msgs.join(' / ') : '');
+    }
+    function disableStartButtons(){
+      ['btn-start-short','btn-start-full','btn-resume'].forEach(id => {
+        const b = el(id); if (b) { b.disabled = true; }
+      });
+    }
+    function updateResumeButton(show){
+      const b = el('btn-resume');
+      if (!b) return;
+      if (show) { b.hidden = false; b.disabled = false; }
+      else { b.hidden = true; b.disabled = true; }
+    }
+
+    function maskPiiField(input){
+      // 入力値を実表示ではなくマスク表示
+      const kind = input.dataset.pii;
+      const val = input.value;
+      if (!val) return;
+      if (input.type === 'date') return; // 日付はマスクしない
+      // placeholder でマスク表現
+      input.setAttribute('data-masked','true');
+      // 値自体は State 側にあるので、ここでは視覚的な切替のみ
+      input.value = maskText(val, kind);
+    }
+
+    // 印刷プレビュー構築
+    function toPrint(mode){
+      const s = State.get();
+      const r = s.result;
+      if (!r) return;
+      const p = PATTERNS[r.patternId];
+
+      // body class 切替
+      document.body.classList.remove('print-summary','print-detail');
+      document.body.classList.add(mode === 'detail' ? 'print-detail' : 'print-summary');
+
+      // ヘッダー（PII）
+      const anonymize = !!s.ui.anonymize;
+      const headerCompany = s.pii.companyName ? (anonymize ? '株式会社●●●' : s.pii.companyName) : '（企業名未入力）';
+      const headerContact = s.pii.contactName ? (anonymize ? '●● ●●' : s.pii.contactName) : '';
+      const headerDate = s.pii.date || new Date().toISOString().slice(0,10);
+
+      el('print-header-company').textContent = headerCompany;
+      el('print-header-contact').textContent = headerContact ? '担当: ' + headerContact : '';
+      el('print-header-date').textContent = '発行日: ' + headerDate;
+
+      // 本文組み立て
+      const body = el('print-body');
+      body.innerHTML = '';
+
+      const h1 = document.createElement('h1');
+      h1.innerHTML = '<span class="print-pattern-badge pat-' + r.patternId + '">パターン ' + r.patternId + '</span>' + escapeHtml(p.name);
+      body.appendChild(h1);
+
+      const sub = document.createElement('p');
+      sub.innerHTML = '<strong>診断スコア:</strong> ' + escapeHtml(axisSummary(r.scores))
+        + '　<strong>マッチ優先度:</strong> ' + r.priorityMatched
+        + (r.fallback ? '（フォールバック）' : '');
+      body.appendChild(sub);
+
+      // 推奨設定サマリ（要約版でも出す）
+      const h2sum = document.createElement('h2'); h2sum.textContent = '推奨設定サマリ'; body.appendChild(h2sum);
+      const olSum = document.createElement('ol');
+      p.summary5.forEach(t => {
+        const li = document.createElement('li'); li.textContent = t; olSum.appendChild(li);
+      });
+      body.appendChild(olSum);
+
+      // 工数
+      const effort = document.createElement('p');
+      effort.innerHTML = '<strong>設定工数の目安:</strong> ' + escapeHtml(p.effort);
+      body.appendChild(effort);
+
+      // 注意点
+      const h2c = document.createElement('h2'); h2c.textContent = '注意点 / リスク'; body.appendChild(h2c);
+      const ulC = document.createElement('ul');
+      p.cautions.forEach(t => {
+        const li = document.createElement('li'); li.textContent = t; ulC.appendChild(li);
+      });
+      body.appendChild(ulC);
+
+      // 要ヒアリング
+      const h2t = document.createElement('h2'); h2t.textContent = '要ヒアリング項目'; body.appendChild(h2t);
+      if (r.tags.length === 0) {
+        const p0 = document.createElement('p'); p0.textContent = '（特になし）'; body.appendChild(p0);
+      } else {
+        const div = document.createElement('div');
+        r.tags.forEach(t => {
+          const span = document.createElement('span');
+          span.className = 'print-hearing-tags';
+          span.textContent = t;
+          div.appendChild(span);
+        });
+        body.appendChild(div);
+      }
+
+      // 詳細版のみ: 回答一覧 / マッチルール / チェックリスト / （条件付き）営業メモ
+      if (mode === 'detail') {
+        // マッチルール
+        const h2m = document.createElement('h2'); h2m.textContent = 'マッチしたルール'; body.appendChild(h2m);
+        const pm = document.createElement('p');
+        pm.innerHTML = '<strong>優先度 ' + r.priorityMatched + '（' + (r.fallback ? 'フォールバック' : 'マッチ') + '）:</strong> ' + escapeHtml(r.matchedRuleLabel);
+        body.appendChild(pm);
+        if (r.subMatches && r.subMatches.length > 0) {
+          const sm = document.createElement('p');
+          sm.innerHTML = '<strong>副次マッチ:</strong> ' + r.subMatches.map(escapeHtml).join(' ／ ');
+          body.appendChild(sm);
+        }
+
+        // 回答一覧
+        const h2a = document.createElement('h2'); h2a.textContent = '回答一覧'; body.appendChild(h2a);
+        const table = document.createElement('table');
+        table.innerHTML = '<thead><tr><th>ID</th><th>質問</th><th>回答</th><th>コード</th><th>業務領域</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+        Object.keys(QUESTIONS).forEach(qid => {
+          const code = s.answers[qid];
+          if (code === undefined) return;
+          const q = QUESTIONS[qid];
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td>' + escapeHtml(qid) + '</td>'
+            + '<td>' + escapeHtml(q.text) + '</td>'
+            + '<td>' + escapeHtml(answerLabel(qid, code)) + '</td>'
+            + '<td>' + escapeHtml(code) + '</td>'
+            + '<td>' + escapeHtml(q.domain) + '</td>';
+          tbody.appendChild(tr);
+        });
+        table.appendChild(tbody);
+        body.appendChild(table);
+
+        // 設定項目チェックリスト
+        const h2l = document.createElement('h2'); h2l.textContent = '設定項目チェックリスト'; body.appendChild(h2l);
+        const table2 = document.createElement('table');
+        table2.innerHTML = '<thead><tr><th style="width:18%">カテゴリ</th><th>項目</th><th style="width:16%">状態</th></tr></thead>';
+        const tb2 = document.createElement('tbody');
+        (p.detail || []).forEach(item => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = '<td>' + escapeHtml(item.category) + '</td>'
+            + '<td>' + escapeHtml(item.label) + '</td>'
+            + '<td>' + escapeHtml(item.status) + '</td>';
+          tb2.appendChild(tr);
+        });
+        table2.appendChild(tb2);
+        body.appendChild(table2);
+
+        // 営業メモ（§11.3.1 真理値表：detail && printSalesMemo===true のみ）
+        if (s.ui.printSalesMemo === true) {
+          const memoBlock = document.createElement('div');
+          memoBlock.className = 'sales-memo-print';
+          const memoText = s.salesMemo || '（メモなし）';
+          const display = anonymize ? '（匿名化適用：社名／人名は伏せ字で表示）\n' + memoText.replace(/[0-9A-Za-z]/g, '●') : memoText;
+          memoBlock.innerHTML = '<h3>営業担当者メモ</h3><pre style="white-space:pre-wrap;font-family:inherit;margin:0;">' + escapeHtml(display) + '</pre>';
+          body.appendChild(memoBlock);
+        }
+      }
+    }
+
+    return {
+      show, renderQuestion, renderResult, toPrint,
+      showLocalStorageWarning, showConfigErrorBanner,
+      disableStartButtons, updateResumeButton, updateBackButton,
+      updateProgress, togglePiiFields, maskPiiField,
+    };
+  })();
+
+  // ========== Validate Config ==========
+  function validateConfig(){
+    const warns = [];
+    for (const r of PATTERN_RULES) {
+      if (!PATTERNS[r.patternId]) warns.push('PATTERN_RULES['+r.priority+'] の patternId=\''+r.patternId+'\' が PATTERNS に存在しない');
+      if (!r.ruleLabel) warns.push('PATTERN_RULES['+r.priority+'] の ruleLabel が未定義');
+      if (typeof r.predicate !== 'function') warns.push('PATTERN_RULES['+r.priority+'] の predicate が関数ではない');
+    }
+    const priorities = PATTERN_RULES.map(r => r.priority);
+    const dup = priorities.filter((p,i) => priorities.indexOf(p) !== i);
+    if (dup.length) warns.push('PATTERN_RULES の priority 重複: ' + [...new Set(dup)].join(','));
+    const sorted = [...priorities].sort((a,b)=>a-b);
+    for (let i = 0; i < sorted.length; i++) {
+      if (sorted[i] !== i+1) { warns.push('PATTERN_RULES の priority に欠番'); break; }
+    }
+    for (const [pid, p] of Object.entries(PATTERNS)) {
+      if (!Array.isArray(p.detail) || p.detail.length === 0) {
+        warns.push('PATTERNS[\''+pid+'\'].detail が配列かつ 1 要素以上である必要がある');
+      }
+    }
+    const REFERENCED_QIDS = ['Q2','Q4','Q3','Q5','Q7','Q6','Q12','Q13','Q16','Q17','Q15','Q1'];
+    for (const qid of REFERENCED_QIDS) {
+      if (!(qid in QUESTIONS)) warns.push('判定系参照 qid=\''+qid+'\' が QUESTIONS に存在しない');
+    }
+    if (warns.length) {
+      try { console.warn('[config]', warns); } catch(e){}
+      Render.showConfigErrorBanner(warns);
+    }
+    return warns.length === 0;
+  }
+
+  // ========== AppCore ==========
+  const AppCore = (function(){
+    function init(){
+      bindEvents();
+      if (!validateConfig()) {
+        Render.disableStartButtons();
+        Render.show('splash');
+        return;
+      }
+      if (!Persist.isAvailable()) {
+        State.get().ui.localStorageWarning = true;
+        Render.showLocalStorageWarning();
+      }
+      Render.updateResumeButton(computeResumeVisibility());
+      Render.show('splash');
+    }
+    function computeResumeVisibility(){
+      const r = document.querySelector('input[name="persist"]:checked');
+      const v = r ? r.value : 'none';
+      return Persist.isAvailable() && Persist.hasSavedSession() && v === 'local';
+    }
+    function onPersistChange(){
+      const newVal = document.querySelector('input[name="persist"]:checked').value;
+      const prev = State.get().persistMode;
+      State.get().persistMode = newVal;
+      if (prev === 'none' && newVal === 'local') Persist.save();
+      if (prev === 'local' && newVal === 'none') Persist.clear();
+      Render.updateResumeButton(computeResumeVisibility());
+    }
+    function onStart(mode){
+      const sync = document.querySelector('input[name="persist"]:checked').value;
+      if (State.get().persistMode !== sync) onPersistChange();
+      if (mode === 'short') Flow.startShort(); else Flow.startFull();
+      State.setScreen('question');
+      Render.show('question');
+      Render.renderQuestion();
+      Persist.save();
+    }
+    function onResume(){
+      const v = document.querySelector('input[name="persist"]:checked').value;
+      if (v !== 'local') return;
+      if (!Persist.load()) return;
+      State.get().persistMode = 'local';
+      State.setScreen('question');
+      Render.show('question');
+      Render.renderQuestion();
+      toast('前回の回答を復元しました');
+    }
+    function onAnswer(qid, val){
+      State.setAnswer(qid, val);
+      const r = Flow.next();
+      Persist.save();
+      if (r.done) {
+        State.get().completedAt = Date.now();
+        State.get().result = Judge.evaluate();
+        State.setScreen('result');
+        Render.show('result');
+        Render.renderResult();
+        // 完了したら保存キーは不要（オプション）。ただし仕様上は保存継続で問題ない
+      } else {
+        Render.renderQuestion();
+      }
+    }
+    function onBack(){
+      const r = Flow.back();
+      if (r.noop) return;
+      Persist.save();
+      Render.renderQuestion();
+    }
+    function onRestart(){
+      State.reset();
+      Render.show('splash');
+      // reset により persistMode は 'none' に戻る
+      Render.updateResumeButton(computeResumeVisibility());
+      // ラジオも UI 同期
+      const radios = qsa('input[name="persist"]');
+      radios.forEach(r => { r.checked = (r.value === 'none'); });
+    }
+    function onClearStorage(){
+      Persist.clear();
+      State.reset();
+      Render.show('splash');
+      Render.updateResumeButton(computeResumeVisibility());
+      const radios = qsa('input[name="persist"]');
+      radios.forEach(r => { r.checked = (r.value === 'none'); });
+      toast('保存データをクリアしました');
+    }
+    function onPrint(mode){
+      State.get().ui.printMode = mode;
+      // 印刷プレビューコントロールのラジオを同期
+      qsa('input[name="printMode"]').forEach(r => { r.checked = (r.value === mode); });
+      el('chk-anonymize').checked = !!State.get().ui.anonymize;
+      el('chk-print-salesmemo').checked = !!State.get().ui.printSalesMemo;
+      State.setScreen('print');
+      Render.show('print');
+      Render.toPrint(mode);
+    }
+    function onDoPrint(){
+      try { window.print(); }
+      catch(e){ toast('ブラウザの印刷機能（Ctrl/Cmd+P）をお使いください'); }
+    }
+    function onCopySummary(){
+      const r = State.get().result;
+      if (!r) return;
+      const p = PATTERNS[r.patternId];
+      const reasons = [];
+      reasons.push('L=' + r.scores.L);
+      reasons.push('A=' + r.scores.A);
+      reasons.push('C=' + r.scores.C);
+      if (State.get().answers.Q15 === ANS.YES) reasons.push('拡張計画あり');
+      const tagsStr = r.tags.length === 0 ? '特になし' : r.tags.join('、');
+      const txt =
+        '【運用整備ナビゲーター 診断結果】\n' +
+        'パターン: ' + r.patternId + ' ' + p.name + '\n' +
+        '該当理由: ' + reasons.join('／') + '\n' +
+        '要ヒアリング: ' + tagsStr + '\n' +
+        '推奨工数目安: ' + p.effort + '\n' +
+        '---\n' +
+        '本ツールは診断補助であり、法令判定ではありません。';
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt)
+          .then(() => toast('結果サマリをコピーしました'))
+          .catch(() => showCopyFallback(txt));
+      } else {
+        showCopyFallback(txt);
+      }
+    }
+    function showCopyFallback(text){
+      const back = document.createElement('div');
+      back.className = 'copy-modal-backdrop no-print';
+      back.innerHTML =
+        '<div class="copy-modal" role="dialog" aria-labelledby="copy-modal-title">' +
+          '<h3 id="copy-modal-title">結果サマリ（手動でコピー）</h3>' +
+          '<p style="margin:4px 0 8px;font-size:12px;color:#5b6b7c;">テキストを選択してコピー（Ctrl/Cmd+C）してください。</p>' +
+          '<textarea readonly></textarea>' +
+          '<div class="copy-modal-actions"><button type="button" class="btn-primary" data-close>閉じる</button></div>' +
+        '</div>';
+      document.body.appendChild(back);
+      const ta = back.querySelector('textarea');
+      ta.value = text;
+      ta.focus(); ta.select();
+      back.addEventListener('click', (e) => {
+        if (e.target === back || e.target.hasAttribute('data-close')) back.remove();
+      });
+    }
+
+    function bindEvents(){
+      qsa('input[name="persist"]').forEach(r => r.addEventListener('change', onPersistChange));
+      el('btn-start-short').addEventListener('click', () => onStart('short'));
+      el('btn-start-full').addEventListener('click', () => onStart('full'));
+      el('btn-resume').addEventListener('click', onResume);
+      el('btn-clear-storage').addEventListener('click', onClearStorage);
+      el('btn-clear-storage-2').addEventListener('click', onClearStorage);
+      el('btn-back').addEventListener('click', onBack);
+      el('btn-restart').addEventListener('click', onRestart);
+
+      el('btn-print-summary').addEventListener('click', () => onPrint('summary'));
+      el('btn-print-detail').addEventListener('click', () => onPrint('detail'));
+      el('btn-copy-summary').addEventListener('click', onCopySummary);
+
+      el('btn-toggle-pii').addEventListener('click', () => {
+        Render.togglePiiFields(!State.get().ui.piiFieldsOpen);
+      });
+      // PII 入力 → State 反映
+      ['inp-company-name','inp-contact-name','inp-date'].forEach(id => {
+        const inp = el(id);
+        inp.addEventListener('input', (e) => {
+          const kind = e.target.dataset.pii;
+          State.get().pii[kind] = e.target.value;
+        });
+      });
+      // 営業メモ
+      el('sales-memo').addEventListener('input', (e) => {
+        State.get().salesMemo = e.target.value;
+      });
+
+      // 印刷プレビュー操作
+      qsa('input[name="printMode"]').forEach(r => r.addEventListener('change', (e) => {
+        State.get().ui.printMode = e.target.value;
+        Render.toPrint(e.target.value);
+      }));
+      el('chk-anonymize').addEventListener('change', (e) => {
+        State.get().ui.anonymize = !!e.target.checked;
+        Render.toPrint(State.get().ui.printMode);
+      });
+      el('chk-print-salesmemo').addEventListener('change', (e) => {
+        State.get().ui.printSalesMemo = !!e.target.checked;
+        Render.toPrint(State.get().ui.printMode);
+      });
+      el('btn-do-print').addEventListener('click', onDoPrint);
+      el('btn-back-to-result').addEventListener('click', () => {
+        Render.show('result');
+        State.setScreen('result');
+      });
+
+      // キーボード操作
+      document.addEventListener('keydown', (e) => {
+        if (State.get().screen !== 'question') return;
+        const active = document.activeElement;
+        const isForm = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA');
+        if (isForm) return;
+        const key = e.key.toLowerCase();
+        const qid = State.get().currentQid;
+        const q = QUESTIONS[qid];
+        if (!q) return;
+        if (q.type === 'YN') {
+          if (key === 'y') { e.preventDefault(); onAnswer(qid, ANS.YES); return; }
+          if (key === 'n') { e.preventDefault(); onAnswer(qid, ANS.NO); return; }
+        } else {
+          const idx = parseInt(e.key, 10);
+          if (idx >= 1 && idx <= q.choices.length) {
+            e.preventDefault();
+            onAnswer(qid, q.choices[idx-1].value);
+            return;
+          }
+        }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          onBack();
+        }
+      });
+    }
+
+    return {
+      init,
+      onStart, onResume, onPersistChange,
+      onAnswer, onBack, onRestart, onClearStorage,
+      onPrint, onDoPrint, onCopySummary,
+    };
+  })();
+
+  // トースト
+  let toastTimer = null;
+  function toast(msg){
+    const t = el('toast');
+    if (!t) return;
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // 公開（デバッグ用、自動的に副作用は発生しない）
+  window.__CS_YESNO__ = { State, Persist, Flow, Judge, PATTERN_RULES, PATTERNS, QUESTIONS, SHORT_ROUTE, ANS, APP_VERSION };
+
+  document.addEventListener('DOMContentLoaded', () => AppCore.init());
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+name: "15分丸め（増加方向 / スタッフ有利）"
+description: "出勤floor（切捨て）×退勤ceil（切上げ）。労働時間が増加方向に偏る。"
+unit_minutes: 15
+clock_in:
+  direction: floor
+clock_out:
+  direction: ceil
+break:
+  type: fixed
+  minutes: 60
+amount_rounding: floor

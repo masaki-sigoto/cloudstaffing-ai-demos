@@ -1,0 +1,11 @@
+name: "1分単位（フェア）"
+description: "丸めなし相当。端数処理の基準比較用。"
+unit_minutes: 1
+clock_in:
+  direction: round
+clock_out:
+  direction: round
+break:
+  type: fixed
+  minutes: 60
+amount_rounding: floor
