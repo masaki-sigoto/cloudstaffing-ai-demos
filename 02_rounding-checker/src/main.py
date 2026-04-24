@@ -212,8 +212,8 @@ def load_rule(path: str) -> Rule:
 
     name = str(_req("name"))
     unit = int(_req("unit_minutes"))
-    if unit not in (1, 5, 15, 30, 60):
-        raise SystemExit(f"[ERROR] unit_minutes must be 1/5/15/30/60 (got {unit})")
+    if unit not in (1, 5, 10, 15, 30, 60):
+        raise SystemExit(f"[ERROR] unit_minutes must be 1/5/10/15/30/60 (got {unit})")
 
     cin = _req("clock_in")
     cout = _req("clock_out")

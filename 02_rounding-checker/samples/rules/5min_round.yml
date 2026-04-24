@@ -1,0 +1,11 @@
+name: "5分丸め（四捨五入相当）"
+description: "5分単位で round（出退勤とも最寄の5分へ）。中間的な丸め方式。"
+unit_minutes: 5
+clock_in:
+  direction: round
+clock_out:
+  direction: round
+break:
+  type: fixed
+  minutes: 60
+amount_rounding: floor
