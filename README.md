@@ -107,6 +107,7 @@ ai-demos/
 ├── launch-dashboard.sh         統合ダッシュボード起動（推奨）
 ├── launch-csv.sh / launch-rounding.sh / launch-attendance.sh / launch-yesno.sh
 ├── launch-all.sh               メニュー形式ランチャー
+├── .claude/skills/             4 デモ起動 Skill 定義（demo-1〜4-*）
 ├── dashboard/
 │   ├── index.html              ルートダッシュボード（カードUI）
 │   ├── 01.html / 02.html / 03.html    各デモ詳細画面
