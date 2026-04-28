@@ -62,11 +62,11 @@ ENV/
 # 03_attendance-check/samples/
 
 # Claude Code 個人状態（サブプロジェクト含めて全ての階層で除外）
+# ※ skills/ は共有定義のため除外しない（commands/ と同等扱い）
 **/.claude/state/
 **/.claude/sessions/
 **/.claude/logs/
 **/.claude/debug/
-**/.claude/skills/
 
 # ログ
 *.log
